@@ -114,6 +114,62 @@ export const GetCollectionInvoiceResponse = zod.object({
 })
 
 
+
+
+
+export const BulkCollectionInvoiceActionBody = zod.object({
+  "invoice_ids": zod.array(zod.string()).min(1),
+  "action": zod.enum(['mark_sent', 'regenerate'])
+})
+
+export const bulkCollectionInvoiceActionResponseInvoicesItemRiskRiskScoreMin = 0;
+export const bulkCollectionInvoiceActionResponseInvoicesItemRiskRiskScoreMax = 100;
+
+
+
+
+
+
+export const BulkCollectionInvoiceActionResponse = zod.object({
+  "action": zod.enum(['mark_sent', 'regenerate']),
+  "requested_count": zod.number().int(),
+  "updated_count": zod.number().int(),
+  "skipped_count": zod.number().int(),
+  "invoices": zod.array(zod.object({
+  "invoice_id": zod.string(),
+  "customer_name": zod.string(),
+  "customer_segment": zod.enum(['Enterprise', 'SMB', 'Startup']),
+  "contact_person": zod.string(),
+  "invoice_amount": zod.number(),
+  "invoice_date": zod.coerce.date(),
+  "due_date": zod.coerce.date(),
+  "payment_terms": zod.string(),
+  "payment_history": zod.string(),
+  "reminders_sent": zod.number().int(),
+  "last_reminder_date": zod.coerce.date().nullish(),
+  "relationship_years": zod.number(),
+  "annual_volume": zod.number(),
+  "status": zod.enum(['Overdue', 'Reminder Sent', 'Escalated']),
+  "notes": zod.string(),
+  "days_overdue": zod.number().int(),
+  "amount_ratio": zod.number(),
+  "risk": zod.object({
+  "risk_level": zod.enum(['Low', 'Medium', 'High', 'Critical']),
+  "risk_score": zod.number().int().min(bulkCollectionInvoiceActionResponseInvoicesItemRiskRiskScoreMin).max(bulkCollectionInvoiceActionResponseInvoicesItemRiskRiskScoreMax),
+  "reasoning": zod.string().min(1),
+  "source": zod.enum(['ai', 'fallback'])
+}),
+  "draft": zod.object({
+  "subject": zod.string().min(1),
+  "message": zod.string().min(1),
+  "tone_used": zod.enum(['gentle', 'firm', 'serious', 'final']),
+  "source": zod.enum(['ai', 'fallback'])
+}),
+  "sent_at": zod.coerce.date().nullish()
+}))
+})
+
+
 export const RegenerateCollectionDraftParams = zod.object({
   "invoiceId": zod.coerce.string()
 })
@@ -190,24 +246,160 @@ export const MarkCollectionMessageSentResponse = zod.object({
 })
 
 
+export const getCollectionSettingsResponseThresholdsGentleMin = 0;
+
+export const getCollectionSettingsResponseThresholdsFirmMin = 0;
+
+export const getCollectionSettingsResponseThresholdsSeriousMin = 0;
+
+export const getCollectionSettingsResponseThresholdsFinalMin = 0;
+
+
+
 export const GetCollectionSettingsResponse = zod.object({
   "force_offline": zod.boolean(),
   "active_source": zod.enum(['ai', 'fallback']),
   "ai_available": zod.boolean(),
-  "reference_date": zod.coerce.date()
+  "reference_date": zod.coerce.date(),
+  "company_name": zod.string(),
+  "company_logo": zod.string().nullable(),
+  "currency": zod.string(),
+  "locale": zod.string(),
+  "thresholds": zod.object({
+  "gentle": zod.number().int().min(getCollectionSettingsResponseThresholdsGentleMin),
+  "firm": zod.number().int().min(getCollectionSettingsResponseThresholdsFirmMin),
+  "serious": zod.number().int().min(getCollectionSettingsResponseThresholdsSeriousMin),
+  "final": zod.number().int().min(getCollectionSettingsResponseThresholdsFinalMin)
 })
+})
+
+
+
+
+
+export const updateCollectionSettingsBodyThresholdsGentleMin = 0;
+
+export const updateCollectionSettingsBodyThresholdsFirmMin = 0;
+
+export const updateCollectionSettingsBodyThresholdsSeriousMin = 0;
+
+export const updateCollectionSettingsBodyThresholdsFinalMin = 0;
+
 
 
 export const UpdateCollectionSettingsBody = zod.object({
-  "force_offline": zod.boolean()
+  "force_offline": zod.boolean().optional(),
+  "company_name": zod.string().min(1).optional(),
+  "company_logo": zod.string().nullish(),
+  "currency": zod.string().min(1).optional(),
+  "locale": zod.string().min(1).optional(),
+  "thresholds": zod.object({
+  "gentle": zod.number().int().min(updateCollectionSettingsBodyThresholdsGentleMin).optional(),
+  "firm": zod.number().int().min(updateCollectionSettingsBodyThresholdsFirmMin).optional(),
+  "serious": zod.number().int().min(updateCollectionSettingsBodyThresholdsSeriousMin).optional(),
+  "final": zod.number().int().min(updateCollectionSettingsBodyThresholdsFinalMin).optional()
+}).optional()
 })
+
+export const updateCollectionSettingsResponseThresholdsGentleMin = 0;
+
+export const updateCollectionSettingsResponseThresholdsFirmMin = 0;
+
+export const updateCollectionSettingsResponseThresholdsSeriousMin = 0;
+
+export const updateCollectionSettingsResponseThresholdsFinalMin = 0;
+
+
 
 export const UpdateCollectionSettingsResponse = zod.object({
   "force_offline": zod.boolean(),
   "active_source": zod.enum(['ai', 'fallback']),
   "ai_available": zod.boolean(),
-  "reference_date": zod.coerce.date()
+  "reference_date": zod.coerce.date(),
+  "company_name": zod.string(),
+  "company_logo": zod.string().nullable(),
+  "currency": zod.string(),
+  "locale": zod.string(),
+  "thresholds": zod.object({
+  "gentle": zod.number().int().min(updateCollectionSettingsResponseThresholdsGentleMin),
+  "firm": zod.number().int().min(updateCollectionSettingsResponseThresholdsFirmMin),
+  "serious": zod.number().int().min(updateCollectionSettingsResponseThresholdsSeriousMin),
+  "final": zod.number().int().min(updateCollectionSettingsResponseThresholdsFinalMin)
 })
+})
+
+
+export const GetCollectionTemplatesResponse = zod.object({
+  "gentle": zod.object({
+  "subject": zod.string(),
+  "body": zod.string()
+}),
+  "firm": zod.object({
+  "subject": zod.string(),
+  "body": zod.string()
+}),
+  "serious": zod.object({
+  "subject": zod.string(),
+  "body": zod.string()
+}),
+  "final": zod.object({
+  "subject": zod.string(),
+  "body": zod.string()
+})
+})
+
+
+export const UpdateCollectionTemplatesBody = zod.object({
+  "gentle": zod.object({
+  "subject": zod.string(),
+  "body": zod.string()
+}).optional(),
+  "firm": zod.object({
+  "subject": zod.string(),
+  "body": zod.string()
+}).optional(),
+  "serious": zod.object({
+  "subject": zod.string(),
+  "body": zod.string()
+}).optional(),
+  "final": zod.object({
+  "subject": zod.string(),
+  "body": zod.string()
+}).optional()
+})
+
+export const UpdateCollectionTemplatesResponse = zod.object({
+  "gentle": zod.object({
+  "subject": zod.string(),
+  "body": zod.string()
+}),
+  "firm": zod.object({
+  "subject": zod.string(),
+  "body": zod.string()
+}),
+  "serious": zod.object({
+  "subject": zod.string(),
+  "body": zod.string()
+}),
+  "final": zod.object({
+  "subject": zod.string(),
+  "body": zod.string()
+})
+})
+
+
+export const GetCollectionMessageHistoryResponseItem = zod.object({
+  "id": zod.string(),
+  "timestamp": zod.coerce.date(),
+  "invoice_id": zod.string(),
+  "customer_name": zod.string(),
+  "tone": zod.enum(['gentle', 'firm', 'serious', 'final']),
+  "source": zod.enum(['ai', 'fallback']),
+  "action": zod.enum(['generated', 'sent']),
+  "subject": zod.string(),
+  "message": zod.string()
+})
+export const GetCollectionMessageHistoryResponse = zod.array(GetCollectionMessageHistoryResponseItem)
 
 
 export const GetCollectionInsightsResponse = zod.object({
@@ -223,3 +415,5 @@ export const ResetCollectionsDemoResponse = zod.object({
   "reset": zod.boolean(),
   "invoice_count": zod.number().int()
 })
+
+

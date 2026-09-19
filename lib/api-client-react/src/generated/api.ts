@@ -20,13 +20,18 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  BulkInvoiceActionInput,
+  BulkInvoiceActionResponse,
   CollectionInsights,
   CollectionSettings,
   CollectionSettingsInput,
+  CollectionTemplates,
+  CollectionTemplatesInput,
   Dashboard,
   DraftRegenerationInput,
   HealthStatus,
   Invoice,
+  MessageHistory,
   MessageResult,
   ResetResult,
   SendMessageInput
@@ -271,6 +276,88 @@ export function useGetCollectionInvoice<TData = Awaited<ReturnType<typeof getCol
 
 
 
+
+export const getBulkCollectionInvoiceActionUrl = () => {
+
+
+
+
+  return `/api/collections/invoices/bulk`
+}
+
+export const bulkCollectionInvoiceAction = async (bulkInvoiceActionInput: BulkInvoiceActionInput, options?: Parameters<typeof customFetch>[1]): Promise<BulkInvoiceActionResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<BulkInvoiceActionResponse>(getBulkCollectionInvoiceActionUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(bulkInvoiceActionInput)
+  }
+);}
+
+
+
+
+
+export const getBulkCollectionInvoiceActionMutationKey = () => ['bulkCollectionInvoiceAction'] as const;
+
+export const getBulkCollectionInvoiceActionMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof bulkCollectionInvoiceAction>>, TError,BulkCollectionInvoiceActionMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof bulkCollectionInvoiceAction>>, TError,BulkCollectionInvoiceActionMutationVariables, TContext> => {
+
+const mutationKey = getBulkCollectionInvoiceActionMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof bulkCollectionInvoiceAction>>, BulkCollectionInvoiceActionMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  bulkCollectionInvoiceAction(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type BulkCollectionInvoiceActionMutationResult = NonNullable<Awaited<ReturnType<typeof bulkCollectionInvoiceAction>>>
+    export type BulkCollectionInvoiceActionMutationBody = BodyType<BulkInvoiceActionInput>
+    export type BulkCollectionInvoiceActionMutationError = ErrorType<unknown>
+    export type BulkCollectionInvoiceActionMutationVariables = {data: BodyType<BulkInvoiceActionInput>}
+
+    export const useBulkCollectionInvoiceAction = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof bulkCollectionInvoiceAction>>, TError,BulkCollectionInvoiceActionMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof bulkCollectionInvoiceAction>>,
+        TError,
+        BulkCollectionInvoiceActionMutationVariables,
+        TContext
+      > => {
+      return useMutation(getBulkCollectionInvoiceActionMutationOptions(options));
+    }
 
 export const getRegenerateCollectionDraftUrl = (invoiceId: string,) => {
 
@@ -591,6 +678,230 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       return useMutation(getUpdateCollectionSettingsMutationOptions(options));
     }
 
+export const getGetCollectionTemplatesUrl = () => {
+
+
+
+
+  return `/api/collections/templates`
+}
+
+export const getCollectionTemplates = async ( options?: Parameters<typeof customFetch>[1]): Promise<CollectionTemplates> => {
+
+  return customFetch<CollectionTemplates>(getGetCollectionTemplatesUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetCollectionTemplatesQueryKey = () => {
+    return [
+    `/api/collections/templates`
+    ] as const;
+    }
+
+
+export const getGetCollectionTemplatesQueryOptions = <TData = Awaited<ReturnType<typeof getCollectionTemplates>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getCollectionTemplates>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetCollectionTemplatesQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getCollectionTemplates>>> = ({ signal }) => getCollectionTemplates({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getCollectionTemplates>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetCollectionTemplatesQueryResult = NonNullable<Awaited<ReturnType<typeof getCollectionTemplates>>>
+export type GetCollectionTemplatesQueryError = ErrorType<unknown>
+
+
+
+export function useGetCollectionTemplates<TData = Awaited<ReturnType<typeof getCollectionTemplates>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getCollectionTemplates>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetCollectionTemplatesQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getUpdateCollectionTemplatesUrl = () => {
+
+
+
+
+  return `/api/collections/templates`
+}
+
+export const updateCollectionTemplates = async (collectionTemplatesInput: CollectionTemplatesInput, options?: Parameters<typeof customFetch>[1]): Promise<CollectionTemplates> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<CollectionTemplates>(getUpdateCollectionTemplatesUrl(),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(collectionTemplatesInput)
+  }
+);}
+
+
+
+
+
+export const getUpdateCollectionTemplatesMutationKey = () => ['updateCollectionTemplates'] as const;
+
+export const getUpdateCollectionTemplatesMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateCollectionTemplates>>, TError,UpdateCollectionTemplatesMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateCollectionTemplates>>, TError,UpdateCollectionTemplatesMutationVariables, TContext> => {
+
+const mutationKey = getUpdateCollectionTemplatesMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateCollectionTemplates>>, UpdateCollectionTemplatesMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  updateCollectionTemplates(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateCollectionTemplatesMutationResult = NonNullable<Awaited<ReturnType<typeof updateCollectionTemplates>>>
+    export type UpdateCollectionTemplatesMutationBody = BodyType<CollectionTemplatesInput>
+    export type UpdateCollectionTemplatesMutationError = ErrorType<unknown>
+    export type UpdateCollectionTemplatesMutationVariables = {data: BodyType<CollectionTemplatesInput>}
+
+    export const useUpdateCollectionTemplates = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateCollectionTemplates>>, TError,UpdateCollectionTemplatesMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateCollectionTemplates>>,
+        TError,
+        UpdateCollectionTemplatesMutationVariables,
+        TContext
+      > => {
+      return useMutation(getUpdateCollectionTemplatesMutationOptions(options));
+    }
+
+export const getGetCollectionMessageHistoryUrl = () => {
+
+
+
+
+  return `/api/collections/history`
+}
+
+export const getCollectionMessageHistory = async ( options?: Parameters<typeof customFetch>[1]): Promise<MessageHistory> => {
+
+  return customFetch<MessageHistory>(getGetCollectionMessageHistoryUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetCollectionMessageHistoryQueryKey = () => {
+    return [
+    `/api/collections/history`
+    ] as const;
+    }
+
+
+export const getGetCollectionMessageHistoryQueryOptions = <TData = Awaited<ReturnType<typeof getCollectionMessageHistory>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getCollectionMessageHistory>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetCollectionMessageHistoryQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getCollectionMessageHistory>>> = ({ signal }) => getCollectionMessageHistory({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getCollectionMessageHistory>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetCollectionMessageHistoryQueryResult = NonNullable<Awaited<ReturnType<typeof getCollectionMessageHistory>>>
+export type GetCollectionMessageHistoryQueryError = ErrorType<unknown>
+
+
+
+export function useGetCollectionMessageHistory<TData = Awaited<ReturnType<typeof getCollectionMessageHistory>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getCollectionMessageHistory>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetCollectionMessageHistoryQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
 export const getGetCollectionInsightsUrl = () => {
 
 
@@ -729,3 +1040,4 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       > => {
       return useMutation(getResetCollectionsDemoMutationOptions(options));
     }
+

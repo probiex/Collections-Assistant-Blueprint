@@ -15,6 +15,12 @@ import Dashboard from '@/pages/dashboard';
 import InvoiceDetail from '@/pages/invoice-detail';
 import Invoices from '@/pages/invoices';
 import RiskModels from '@/pages/risk-models';
+import Messages from '@/pages/messages';
+import Reports from '@/pages/reports';
+import PaymentCollection from '@/pages/payment-collection';
+import Integrations from '@/pages/integrations';
+import Export from '@/pages/export';
+import Settings from '@/pages/settings';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -33,7 +39,13 @@ function Router() {
           <Route path="/" component={Dashboard} />
           <Route path="/invoices" component={Invoices} />
           <Route path="/invoices/:id" component={InvoiceDetail} />
+          <Route path="/messages" component={Messages} />
+          <Route path="/reports" component={Reports} />
+          <Route path="/payment-collection" component={PaymentCollection} />
+          <Route path="/integrations" component={Integrations} />
+          <Route path="/export" component={Export} />
           <Route path="/risk-models" component={RiskModels} />
+          <Route path="/settings" component={Settings} />
           <Route component={NotFound} />
         </Switch>
       </RoutedErrorBoundary>

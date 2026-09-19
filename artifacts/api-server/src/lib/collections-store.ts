@@ -1,5 +1,26 @@
 import { seedInvoices, type SeedInvoice } from "./collections-data";
-import type { MessageResult, Tone } from "./collections-engine";
+import { defaultTemplates, defaultThresholds, type EscalationThresholds, type MessageResult, type MessageTemplates, type Source, type Tone } from "./collections-engine";
+
+export type CollectionSettings = {
+  company_name: string;
+  company_logo: string | null;
+  currency: string;
+  locale: string;
+  thresholds: EscalationThresholds;
+};
+export type CollectionSettingsInput = Partial<Omit<CollectionSettings, "thresholds">> & { thresholds?: Partial<EscalationThresholds> };
+
+export type MessageHistoryEntry = {
+  id: string;
+  timestamp: string;
+  invoice_id: string;
+  customer_name: string;
+  tone: Tone;
+  source: Source;
+  action: "generated" | "sent";
+  subject: string;
+  message: string;
+};
 
 type Mutation = {
   status?: SeedInvoice["status"];
@@ -11,6 +32,16 @@ type Mutation = {
 
 const mutations = new Map<string, Mutation>();
 let forceOffline = true;
+let settings: CollectionSettings = {
+  company_name: "Accounts Team",
+  company_logo: null,
+  currency: "INR",
+  locale: "en-IN",
+  thresholds: { ...defaultThresholds },
+};
+let templates: MessageTemplates = structuredClone(defaultTemplates);
+let history: MessageHistoryEntry[] = [];
+let historySequence = 0;
 
 export const collectionsStore = {
   list(): Array<SeedInvoice & Mutation> {
@@ -39,5 +70,48 @@ export const collectionsStore = {
   },
   getForceOffline: () => forceOffline,
   setForceOffline(value: boolean) { forceOffline = value; },
-  reset() { mutations.clear(); forceOffline = true; },
+  getSettings(): CollectionSettings { return { ...settings, thresholds: { ...settings.thresholds } }; },
+  updateSettings(input: CollectionSettingsInput) {
+    const next = Object.fromEntries(Object.entries(input).filter(([, value]) => value !== undefined)) as Partial<Omit<CollectionSettings, "thresholds">>;
+    settings = {
+      ...settings,
+      ...next,
+      thresholds: { ...settings.thresholds, ...(input.thresholds ?? {}) },
+    };
+    return this.getSettings();
+  },
+  getTemplates(): MessageTemplates {
+    return structuredClone(templates);
+  },
+  updateTemplates(input: Partial<MessageTemplates>) {
+    templates = {
+      ...templates,
+      ...input,
+    };
+    return this.getTemplates();
+  },
+  addHistory(invoice: SeedInvoice, draft: MessageResult, action: MessageHistoryEntry["action"]) {
+    const entry: MessageHistoryEntry = {
+      id: `message-${++historySequence}`,
+      timestamp: new Date().toISOString(),
+      invoice_id: invoice.invoice_id,
+      customer_name: invoice.customer_name,
+      tone: draft.tone_used,
+      source: draft.source,
+      action,
+      subject: draft.subject,
+      message: draft.message,
+    };
+    history = [entry, ...history];
+    return entry;
+  },
+  getHistory(): MessageHistoryEntry[] { return history.map((entry) => ({ ...entry })); },
+  reset() {
+    mutations.clear();
+    forceOffline = true;
+    settings = { company_name: "Accounts Team", company_logo: null, currency: "INR", locale: "en-IN", thresholds: { ...defaultThresholds } };
+    templates = structuredClone(defaultTemplates);
+    history = [];
+    historySequence = 0;
+  },
 };

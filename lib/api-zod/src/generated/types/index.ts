@@ -6,19 +6,32 @@
  * OpenAPI spec version: 0.1.0
  */
 
+export * from './bulkInvoiceActionInput';
+export * from './bulkInvoiceActionInputAction';
+export * from './bulkInvoiceActionResponse';
+export * from './bulkInvoiceActionResponseAction';
 export * from './collectionInsights';
 export * from './collectionInsightsSource';
 export * from './collectionSettings';
 export * from './collectionSettingsActiveSource';
 export * from './collectionSettingsInput';
+export * from './collectionTemplates';
+export * from './collectionTemplatesInput';
 export * from './dashboard';
 export * from './dashboardEngineSource';
 export * from './draftRegenerationInput';
 export * from './draftRegenerationInputDirection';
+export * from './escalationThresholds';
+export * from './escalationThresholdsInput';
 export * from './healthStatus';
 export * from './invoice';
 export * from './invoiceCustomerSegment';
 export * from './invoiceStatus';
+export * from './messageHistory';
+export * from './messageHistoryEntry';
+export * from './messageHistoryEntryAction';
+export * from './messageHistoryEntrySource';
+export * from './messageHistoryEntryTone';
 export * from './messageResult';
 export * from './messageResultSource';
 export * from './messageResultToneUsed';
@@ -29,3 +42,4 @@ export * from './riskResultRiskLevel';
 export * from './riskResultSource';
 export * from './sendMessageInput';
 export * from './sendMessageInputToneUsed';
+export * from './template';

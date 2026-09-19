@@ -47,6 +47,23 @@ paths:
                 $ref: "#/components/schemas/Invoice"
         "404":
           description: Not found
+  /collections/invoices/bulk:
+    post:
+      operationId: bulkCollectionInvoiceAction
+      tags: [collections]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BulkInvoiceActionInput"
+      responses:
+        "200":
+          description: Bulk invoice action result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BulkInvoiceActionResponse"
   /collections/invoices/{invoiceId}/draft:
     post:
       operationId: regenerateCollectionDraft
@@ -116,6 +133,44 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/CollectionSettings"
+  /collections/templates:
+    get:
+      operationId: getCollectionTemplates
+      tags: [collections]
+      responses:
+        "200":
+          description: Editable escalation templates
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CollectionTemplates"
+    patch:
+      operationId: updateCollectionTemplates
+      tags: [collections]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CollectionTemplatesInput"
+      responses:
+        "200":
+          description: Updated escalation templates
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CollectionTemplates"
+  /collections/history:
+    get:
+      operationId: getCollectionMessageHistory
+      tags: [collections]
+      responses:
+        "200":
+          description: Cross-invoice generated and sent message history
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageHistory"
   /collections/insights:
     get:
       operationId: getCollectionInsights
@@ -287,7 +342,7 @@ components:
           enum: [gentle, firm, serious, final]
     CollectionSettings:
       type: object
-      required: [force_offline, active_source, ai_available, reference_date]
+      required: [force_offline, active_source, ai_available, reference_date, company_name, company_logo, currency, locale, thresholds]
       properties:
         force_offline: { type: boolean }
         active_source:
@@ -297,11 +352,100 @@ components:
         reference_date:
           type: string
           format: date
+        company_name: { type: string }
+        company_logo:
+          type: [string, "null"]
+        currency: { type: string }
+        locale: { type: string }
+        thresholds:
+          $ref: "#/components/schemas/EscalationThresholds"
     CollectionSettingsInput:
       type: object
-      required: [force_offline]
       properties:
         force_offline: { type: boolean }
+        company_name: { type: string, minLength: 1 }
+        company_logo:
+          type: [string, "null"]
+        currency: { type: string, minLength: 1 }
+        locale: { type: string, minLength: 1 }
+        thresholds:
+          $ref: "#/components/schemas/EscalationThresholdsInput"
+    EscalationThresholds:
+      type: object
+      required: [gentle, firm, serious, final]
+      properties:
+        gentle: { type: integer, minimum: 0 }
+        firm: { type: integer, minimum: 0 }
+        serious: { type: integer, minimum: 0 }
+        final: { type: integer, minimum: 0 }
+    EscalationThresholdsInput:
+      type: object
+      properties:
+        gentle: { type: integer, minimum: 0 }
+        firm: { type: integer, minimum: 0 }
+        serious: { type: integer, minimum: 0 }
+        final: { type: integer, minimum: 0 }
+    Template:
+      type: object
+      required: [subject, body]
+      properties:
+        subject: { type: string }
+        body: { type: string }
+    CollectionTemplates:
+      type: object
+      required: [gentle, firm, serious, final]
+      properties:
+        gentle: { $ref: "#/components/schemas/Template" }
+        firm: { $ref: "#/components/schemas/Template" }
+        serious: { $ref: "#/components/schemas/Template" }
+        final: { $ref: "#/components/schemas/Template" }
+    CollectionTemplatesInput:
+      type: object
+      properties:
+        gentle: { $ref: "#/components/schemas/Template" }
+        firm: { $ref: "#/components/schemas/Template" }
+        serious: { $ref: "#/components/schemas/Template" }
+        final: { $ref: "#/components/schemas/Template" }
+    MessageHistoryEntry:
+      type: object
+      required: [id, timestamp, invoice_id, customer_name, tone, source, action, subject, message]
+      properties:
+        id: { type: string }
+        timestamp: { type: string, format: date-time }
+        invoice_id: { type: string }
+        customer_name: { type: string }
+        tone: { type: string, enum: [gentle, firm, serious, final] }
+        source: { type: string, enum: [ai, fallback] }
+        action: { type: string, enum: [generated, sent] }
+        subject: { type: string }
+        message: { type: string }
+    MessageHistory:
+      type: array
+      items:
+        $ref: "#/components/schemas/MessageHistoryEntry"
+    BulkInvoiceActionInput:
+      type: object
+      required: [invoice_ids, action]
+      properties:
+        invoice_ids:
+          type: array
+          minItems: 1
+          items: { type: string }
+        action:
+          type: string
+          enum: [mark_sent, regenerate]
+    BulkInvoiceActionResponse:
+      type: object
+      required: [action, requested_count, updated_count, skipped_count, invoices]
+      properties:
+        action: { type: string, enum: [mark_sent, regenerate] }
+        requested_count: { type: integer }
+        updated_count: { type: integer }
+        skipped_count: { type: integer }
+        invoices:
+          type: array
+          items:
+            $ref: "#/components/schemas/Invoice"
     CollectionInsights:
       type: object
       required: [critical_exposure, action_accounts, top_customer_concentration, summary, source]

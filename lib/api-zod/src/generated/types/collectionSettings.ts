@@ -6,10 +6,17 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { CollectionSettingsActiveSource } from './collectionSettingsActiveSource';
+import type { EscalationThresholds } from './escalationThresholds';
 
 export interface CollectionSettings {
   force_offline: boolean;
   active_source: CollectionSettingsActiveSource;
   ai_available: boolean;
   reference_date: Date;
+  company_name: string;
+  /** @nullable */
+  company_logo: string | null;
+  currency: string;
+  locale: string;
+  thresholds: EscalationThresholds;
 }

@@ -173,15 +173,141 @@ export const CollectionSettingsActiveSource = {
   fallback: 'fallback',
 } as const;
 
+export interface EscalationThresholds {
+  /** @minimum 0 */
+  gentle: number;
+  /** @minimum 0 */
+  firm: number;
+  /** @minimum 0 */
+  serious: number;
+  /** @minimum 0 */
+  final: number;
+}
+
 export interface CollectionSettings {
   force_offline: boolean;
   active_source: CollectionSettingsActiveSource;
   ai_available: boolean;
   reference_date: string;
+  company_name: string;
+  /** @nullable */
+  company_logo: string | null;
+  currency: string;
+  locale: string;
+  thresholds: EscalationThresholds;
+}
+
+export interface EscalationThresholdsInput {
+  /** @minimum 0 */
+  gentle?: number;
+  /** @minimum 0 */
+  firm?: number;
+  /** @minimum 0 */
+  serious?: number;
+  /** @minimum 0 */
+  final?: number;
 }
 
 export interface CollectionSettingsInput {
-  force_offline: boolean;
+  force_offline?: boolean;
+  /** @minLength 1 */
+  company_name?: string;
+  /** @nullable */
+  company_logo?: string | null;
+  /** @minLength 1 */
+  currency?: string;
+  /** @minLength 1 */
+  locale?: string;
+  thresholds?: EscalationThresholdsInput;
+}
+
+export interface Template {
+  subject: string;
+  body: string;
+}
+
+export interface CollectionTemplates {
+  gentle: Template;
+  firm: Template;
+  serious: Template;
+  final: Template;
+}
+
+export interface CollectionTemplatesInput {
+  gentle?: Template;
+  firm?: Template;
+  serious?: Template;
+  final?: Template;
+}
+
+export type MessageHistoryEntryTone = typeof MessageHistoryEntryTone[keyof typeof MessageHistoryEntryTone];
+
+
+export const MessageHistoryEntryTone = {
+  gentle: 'gentle',
+  firm: 'firm',
+  serious: 'serious',
+  final: 'final',
+} as const;
+
+export type MessageHistoryEntrySource = typeof MessageHistoryEntrySource[keyof typeof MessageHistoryEntrySource];
+
+
+export const MessageHistoryEntrySource = {
+  ai: 'ai',
+  fallback: 'fallback',
+} as const;
+
+export type MessageHistoryEntryAction = typeof MessageHistoryEntryAction[keyof typeof MessageHistoryEntryAction];
+
+
+export const MessageHistoryEntryAction = {
+  generated: 'generated',
+  sent: 'sent',
+} as const;
+
+export interface MessageHistoryEntry {
+  id: string;
+  timestamp: string;
+  invoice_id: string;
+  customer_name: string;
+  tone: MessageHistoryEntryTone;
+  source: MessageHistoryEntrySource;
+  action: MessageHistoryEntryAction;
+  subject: string;
+  message: string;
+}
+
+export type MessageHistory = MessageHistoryEntry[];
+
+export type BulkInvoiceActionInputAction = typeof BulkInvoiceActionInputAction[keyof typeof BulkInvoiceActionInputAction];
+
+
+export const BulkInvoiceActionInputAction = {
+  mark_sent: 'mark_sent',
+  regenerate: 'regenerate',
+} as const;
+
+export interface BulkInvoiceActionInput {
+  /** @minItems 1 */
+  invoice_ids: string[];
+  action: BulkInvoiceActionInputAction;
+}
+
+export type BulkInvoiceActionResponseAction = typeof BulkInvoiceActionResponseAction[keyof typeof BulkInvoiceActionResponseAction];
+
+
+export const BulkInvoiceActionResponseAction = {
+  mark_sent: 'mark_sent',
+  regenerate: 'regenerate',
+} as const;
+
+export interface BulkInvoiceActionResponse {
+  action: BulkInvoiceActionResponseAction;
+  requested_count: number;
+  updated_count: number;
+  skipped_count: number;
+  invoices: Invoice[];
 }
 
 export type CollectionInsightsSource = typeof CollectionInsightsSource[keyof typeof CollectionInsightsSource];
@@ -204,3 +330,4 @@ export interface ResetResult {
   reset: boolean;
   invoice_count: number;
 }
+

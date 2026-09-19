@@ -5,14 +5,33 @@ export type RiskLevel = "Low" | "Medium" | "High" | "Critical";
 export type Tone = "gentle" | "firm" | "serious" | "final";
 export type RiskResult = { risk_level: RiskLevel; risk_score: number; reasoning: string; source: Source };
 export type MessageResult = { subject: string; message: string; tone_used: Tone; source: Source };
+export type EscalationThresholds = Record<Tone, number>;
+export type MessageTemplates = Record<Tone, { subject: string; body: string }>;
 
 export const daysOverdue = (dueDate: string) =>
   Math.max(0, Math.floor((Date.parse(`${REFERENCE_DATE}T00:00:00Z`) - Date.parse(`${dueDate}T00:00:00Z`)) / 86400000));
 
-const inr = (amount: number) => new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(amount);
 const date = (value: string) => new Intl.DateTimeFormat("en-IN", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }).format(new Date(`${value}T00:00:00Z`));
 const riskForScore = (score: number): RiskLevel => score >= 70 ? "Critical" : score >= 50 ? "High" : score >= 25 ? "Medium" : "Low";
-const toneOrder: Tone[] = ["gentle", "firm", "serious", "final"];
+export const defaultThresholds: EscalationThresholds = { gentle: 0, firm: 15, serious: 31, final: 61 };
+export const defaultTemplates: MessageTemplates = {
+  gentle: {
+    subject: "Following up — Invoice {{invoice_id}}",
+    body: "Hi {{contact_person}},\n\nHope you're doing well. Just a quick note that invoice {{invoice_id}} for {{amount}}, due {{due_date}}, is now {{days_overdue}} days overdue. It may simply have slipped through processing. Could you share an expected payment date when convenient?",
+  },
+  firm: {
+    subject: "Following up — Invoice {{invoice_id}}",
+    body: "Hi {{contact_person}},\n\nI'm following up on invoice {{invoice_id}} for {{amount}}, due {{due_date}} and now {{days_overdue}} days overdue. Please confirm the payment date at your earliest convenience, or let us know if anything is blocking settlement.",
+  },
+  serious: {
+    subject: "Following up — Invoice {{invoice_id}}",
+    body: "Hi {{contact_person}},\n\nWe have contacted you {{reminders_sent}} time{{reminder_plural}} regarding invoice {{invoice_id}} for {{amount}}, now {{days_overdue}} days past due. Please give this immediate attention and provide a firm payment date within the next few days.",
+  },
+  final: {
+    subject: "Final notice — Invoice {{invoice_id}}",
+    body: "Hi {{contact_person}},\n\nInvoice {{invoice_id}} for {{amount}} remains unpaid at {{days_overdue}} days overdue despite {{reminders_sent}} prior reminders. Please treat this as a final notice and arrange payment within 7 days to avoid further escalation, including a possible pause on ongoing services.",
+  },
+};
 
 export function fallbackRisk(invoice: SeedInvoice): RiskResult {
   const overdue = daysOverdue(invoice.due_date);
@@ -39,33 +58,51 @@ export function fallbackRisk(invoice: SeedInvoice): RiskResult {
   return { risk_level: level, risk_score: score, reasoning: `${facts.join("; ")}. ${level} priority with an invoice-specific follow-up recommended.`, source: "fallback" };
 }
 
-function recommendedTone(invoice: SeedInvoice): Tone {
+function recommendedTone(invoice: SeedInvoice, thresholds: EscalationThresholds = defaultThresholds): Tone {
   const overdue = daysOverdue(invoice.due_date);
-  let tone: Tone = overdue > 60 ? "final" : overdue > 30 ? "serious" : overdue > 14 ? "firm" : "gentle";
+  const toneOrder: Tone[] = ["gentle", "firm", "serious", "final"];
+  let tone: Tone = "gentle";
+  for (const candidate of toneOrder) {
+    if (overdue >= thresholds[candidate]) tone = candidate;
+  }
   if (invoice.relationship_years >= 3 && invoice.payment_history !== "chronic late payer" && (tone === "serious" || tone === "final")) {
     tone = toneOrder[Math.max(0, toneOrder.indexOf(tone) - 1)];
   }
   return tone;
 }
 
-export function fallbackMessage(invoice: SeedInvoice, direction: "recommended" | "softer" | "firmer" = "recommended"): MessageResult {
-  let index = toneOrder.indexOf(recommendedTone(invoice));
+export type MessageOptions = {
+  thresholds?: EscalationThresholds;
+  templates?: MessageTemplates;
+  companyName?: string;
+  currency?: string;
+  locale?: string;
+};
+
+export function fallbackMessage(invoice: SeedInvoice, direction: "recommended" | "softer" | "firmer" = "recommended", options: MessageOptions = {}): MessageResult {
+  const toneOrder: Tone[] = ["gentle", "firm", "serious", "final"];
+  let index = toneOrder.indexOf(recommendedTone(invoice, options.thresholds));
   if (direction === "softer") index = Math.max(0, index - 1);
   if (direction === "firmer") index = Math.min(toneOrder.length - 1, index + 1);
   const tone = toneOrder[index];
-  const amount = inr(invoice.invoice_amount);
+  const amount = new Intl.NumberFormat(options.locale ?? "en-IN", { style: "currency", currency: options.currency ?? "INR", maximumFractionDigits: 0 }).format(invoice.invoice_amount);
   const overdue = daysOverdue(invoice.due_date);
-  const intro = `Hi ${invoice.contact_person},`;
-  const bodies: Record<Tone, string> = {
-    gentle: `Hope you're doing well. Just a quick note that invoice ${invoice.invoice_id} for ${amount}, due ${date(invoice.due_date)}, is now ${overdue} days overdue. It may simply have slipped through processing. Could you share an expected payment date when convenient?`,
-    firm: `I'm following up on invoice ${invoice.invoice_id} for ${amount}, due ${date(invoice.due_date)} and now ${overdue} days overdue. Please confirm the payment date at your earliest convenience, or let us know if anything is blocking settlement.`,
-    serious: `We have contacted you ${invoice.reminders_sent} time${invoice.reminders_sent === 1 ? "" : "s"} regarding invoice ${invoice.invoice_id} for ${amount}, now ${overdue} days past due. Please give this immediate attention and provide a firm payment date within the next few days.`,
-    final: `Invoice ${invoice.invoice_id} for ${amount} remains unpaid at ${overdue} days overdue despite ${invoice.reminders_sent} prior reminders. Please treat this as a final notice and arrange payment within 7 days to avoid further escalation, including a possible pause on ongoing services.`,
+  const values: Record<string, string> = {
+    contact_person: invoice.contact_person,
+    invoice_id: invoice.invoice_id,
+    amount,
+    due_date: date(invoice.due_date),
+    days_overdue: String(overdue),
+    reminders_sent: String(invoice.reminders_sent),
+    reminder_plural: invoice.reminders_sent === 1 ? "" : "s",
+    company_name: options.companyName ?? "Accounts Team",
   };
+  const template = (options.templates ?? defaultTemplates)[tone];
+  const interpolate = (value: string) => value.replace(/\{\{(\w+)\}\}/g, (_, key: string) => values[key] ?? "");
   const relationship = invoice.relationship_years >= 3 ? ` We value our ${invoice.relationship_years}-year relationship and would prefer to resolve this directly.` : "";
   return {
-    subject: `${tone === "final" ? "Final notice" : "Following up"} — Invoice ${invoice.invoice_id}`,
-    message: `${intro}\n\n${bodies[tone]}${relationship}\n\nRegards,\nAccounts Team`,
+    subject: interpolate(template.subject),
+    message: `${interpolate(template.body)}${relationship}\n\nRegards,\n${options.companyName ?? "Accounts Team"}`,
     tone_used: tone,
     source: "fallback",
   };
@@ -122,14 +159,14 @@ export async function getRisk(invoice: SeedInvoice, forceOffline: boolean, onFal
   }
 }
 
-export async function getMessage(invoice: SeedInvoice, direction: "recommended" | "softer" | "firmer", forceOffline: boolean, onFallback?: (category: string) => void): Promise<MessageResult> {
-  if (forceOffline) return fallbackMessage(invoice, direction);
+export async function getMessage(invoice: SeedInvoice, direction: "recommended" | "softer" | "firmer", forceOffline: boolean, onFallback?: (category: string) => void, options?: MessageOptions): Promise<MessageResult> {
+  if (forceOffline) return fallbackMessage(invoice, direction, options);
   try {
     const parsed = parseMessage(await callAi("message", invoice, direction));
     if (!parsed) throw new Error("invalid_output");
     return { ...parsed, source: "ai" };
   } catch (error) {
     onFallback?.(error instanceof Error ? error.message : "unknown_failure");
-    return fallbackMessage(invoice, direction);
+    return fallbackMessage(invoice, direction, options);
   }
 }

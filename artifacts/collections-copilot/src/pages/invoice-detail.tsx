@@ -30,7 +30,7 @@ import {
   ServerOff
 } from "lucide-react";
 import { Skeleton } from "@workspace/ref-design/components/ui/skeleton";
-import { toast } from "sonner";
+import { toast } from "@workspace/ref-design/hooks/use-toast";
 
 export default function InvoiceDetail() {
   const [, params] = useRoute("/invoices/:id");
@@ -88,14 +88,14 @@ export default function InvoiceDetail() {
       onSuccess: (result) => {
         setSubject(result.subject);
         setMessage(result.message);
-        toast.success(`Draft regenerated with ${direction} tone`);
+        toast({ title: `Draft regenerated with ${direction} tone` });
         // We patch the local cache so we don't trigger a full refetch that would overwrite the user's focus
         queryClient.setQueryData(getGetCollectionInvoiceQueryKey(id), (old: any) => 
           old ? { ...old, draft: result } : old
         );
       },
       onError: () => {
-        toast.error("Failed to regenerate draft");
+        toast({ title: "Failed to regenerate draft", variant: "destructive" });
       }
     });
   };
@@ -111,13 +111,13 @@ export default function InvoiceDetail() {
       } 
     }, {
       onSuccess: (updatedInvoice) => {
-        toast.success("Message sent successfully");
+        toast({ title: "Message sent successfully" });
         queryClient.setQueryData(getGetCollectionInvoiceQueryKey(id), updatedInvoice);
         // Navigate back after a short delay
         setTimeout(() => setLocation("/"), 1500);
       },
       onError: () => {
-        toast.error("Failed to send message");
+        toast({ title: "Failed to send message", variant: "destructive" });
       }
     });
   };

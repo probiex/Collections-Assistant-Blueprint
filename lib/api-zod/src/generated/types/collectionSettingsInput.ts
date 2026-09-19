@@ -5,7 +5,17 @@
  * Collections Copilot API
  * OpenAPI spec version: 0.1.0
  */
+import type { EscalationThresholdsInput } from './escalationThresholdsInput';
 
 export interface CollectionSettingsInput {
-  force_offline: boolean;
+  force_offline?: boolean;
+  /** @minLength 1 */
+  company_name?: string;
+  /** @nullable */
+  company_logo?: string | null;
+  /** @minLength 1 */
+  currency?: string;
+  /** @minLength 1 */
+  locale?: string;
+  thresholds?: EscalationThresholdsInput;
 }

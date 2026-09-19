@@ -1,238 +1,282 @@
 import { ReactNode, useState } from "react";
 import { Link, useLocation } from "wouter";
-import { Search, Bell, Settings, ArrowRight, LayoutDashboard, CreditCard, Activity, Command, Menu, X } from "lucide-react";
+import {
+  Search,
+  Bell,
+  LayoutDashboard,
+  CreditCard,
+  Activity,
+  Command,
+  Menu,
+  X,
+  MessageSquare,
+  BarChart3,
+  Banknote,
+  Plug,
+  Download,
+  Settings,
+  ChevronDown,
+  Zap,
+  ServerOff,
+} from "lucide-react";
 import { Button } from "@workspace/ref-design/components/ui/button";
+import { useGetCollectionSettings } from "@workspace/api-client-react";
+import { cn } from "@workspace/ref-design/lib/utils";
+
+interface NavItem {
+  href: string;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  testId: string;
+}
+
+interface NavGroup {
+  label: string;
+  items: NavItem[];
+}
+
+const NAV_GROUPS: NavGroup[] = [
+  {
+    label: "Workspace",
+    items: [
+      { href: "/", label: "Overview", icon: LayoutDashboard, testId: "nav-dashboard" },
+      { href: "/invoices", label: "Invoices", icon: CreditCard, testId: "nav-invoices" },
+      { href: "/messages", label: "Messages", icon: MessageSquare, testId: "nav-messages" },
+    ],
+  },
+  {
+    label: "Intelligence",
+    items: [
+      { href: "/risk-models", label: "Risk Models", icon: Activity, testId: "nav-risk-models" },
+      { href: "/reports", label: "Reports", icon: BarChart3, testId: "nav-reports" },
+    ],
+  },
+  {
+    label: "Operations",
+    items: [
+      {
+        href: "/payment-collection",
+        label: "Payment Collection",
+        icon: Banknote,
+        testId: "nav-payment",
+      },
+      { href: "/integrations", label: "Integrations", icon: Plug, testId: "nav-integrations" },
+      { href: "/export", label: "Export & Share", icon: Download, testId: "nav-export" },
+    ],
+  },
+  {
+    label: "Configuration",
+    items: [
+      { href: "/settings", label: "Settings", icon: Settings, testId: "nav-settings" },
+    ],
+  },
+];
+
+function NavLink({
+  href,
+  label,
+  icon: Icon,
+  testId,
+  active,
+  onClick,
+}: NavItem & { active: boolean; onClick?: () => void }) {
+  return (
+    <Link
+      href={href}
+      onClick={onClick}
+      className={cn(
+        "flex items-center gap-3 px-3 py-2.5 rounded-full text-sm font-medium transition-colors",
+        active
+          ? "bg-sidebar-primary text-sidebar-primary-foreground"
+          : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+      )}
+      data-testid={testId}
+    >
+      <Icon className="w-4 h-4 shrink-0" />
+      {label}
+    </Link>
+  );
+}
+
+function SidebarContent({ onLinkClick }: { onLinkClick?: () => void }) {
+  const [location] = useLocation();
+  const { data: settings } = useGetCollectionSettings();
+
+  const isActive = (href: string) => {
+    if (href === "/" && location === "/") return true;
+    if (href !== "/" && location.startsWith(href)) return true;
+    return false;
+  };
+
+  return (
+    <>
+      <div className="h-16 flex items-center px-6 border-b border-sidebar-border shrink-0">
+        <div className="flex items-center gap-2 font-serif font-medium text-lg tracking-tight">
+          <Command className="w-5 h-5 text-sidebar-primary" />
+          <span>Copilot</span>
+        </div>
+      </div>
+
+      <div className="p-4 flex-1 overflow-y-auto space-y-6">
+        {NAV_GROUPS.map((group) => (
+          <div key={group.label}>
+            <div className="text-xs font-semibold text-sidebar-foreground/50 uppercase tracking-[0.18em] mb-2 px-3">
+              {group.label}
+            </div>
+            <nav className="space-y-0.5">
+              {group.items.map((item) => (
+                <NavLink
+                  key={item.href}
+                  {...item}
+                  active={isActive(item.href)}
+                  onClick={onLinkClick}
+                />
+              ))}
+            </nav>
+          </div>
+        ))}
+      </div>
+
+      <div className="p-4 border-t border-sidebar-border shrink-0">
+        {settings && (
+          <div className="px-3 mb-3">
+            <div
+              className={cn(
+                "flex items-center gap-1.5 text-xs font-medium px-2.5 py-1.5 rounded-full w-fit",
+                settings.active_source === "ai"
+                  ? "bg-emerald-100/80 text-emerald-700"
+                  : "bg-amber-100/80 text-amber-700"
+              )}
+            >
+              {settings.active_source === "ai" ? (
+                <>
+                  <Zap className="w-3 h-3" /> AI Engine
+                </>
+              ) : (
+                <>
+                  <ServerOff className="w-3 h-3" /> Fallback Mode
+                </>
+              )}
+            </div>
+          </div>
+        )}
+        <div className="flex items-center gap-3 px-3 py-2">
+          <div className="w-8 h-8 rounded-full bg-sidebar-primary text-sidebar-primary-foreground flex items-center justify-center font-bold text-xs shrink-0">
+            FT
+          </div>
+          <div className="flex flex-col min-w-0">
+            <span className="text-sm font-medium leading-none truncate">Finance Team</span>
+            <span className="text-xs text-sidebar-foreground/60 mt-1">Admin</span>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
 
 interface LayoutProps {
   children: ReactNode;
 }
 
 export function Layout({ children }: LayoutProps) {
-  const [location] = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [location] = useLocation();
 
-  const isActive = (path: string) => {
-    if (path === '/' && location === '/') return true;
-    if (path !== '/' && location.startsWith(path)) return true;
+  // Derive current page label for the mobile header
+  const allItems = NAV_GROUPS.flatMap((g) => g.items);
+  const currentItem = allItems.find((item) => {
+    if (item.href === "/" && location === "/") return true;
+    if (item.href !== "/" && location.startsWith(item.href)) return true;
     return false;
-  };
-
-  const navLinks = [
-    { href: "/", label: "Overview", icon: LayoutDashboard, testId: "nav-dashboard" },
-    { href: "/invoices", label: "Invoices", icon: CreditCard, testId: "nav-invoices" },
-    { href: "/risk-models", label: "Risk Models", icon: Activity, testId: "nav-risk-models" }
-  ];
+  });
 
   return (
     <div className="flex h-[100dvh] w-full bg-background overflow-hidden text-foreground relative">
       {/* Mobile Nav Overlay */}
       {mobileMenuOpen && (
         <div className="fixed inset-0 z-50 flex md:hidden">
-          <div className="fixed inset-0 bg-background/80 backdrop-blur-sm" onClick={() => setMobileMenuOpen(false)} />
-          <div className="relative w-64 max-w-[80%] bg-sidebar text-sidebar-foreground border-r border-sidebar-border shadow-2xl h-full flex flex-col animate-in slide-in-from-left duration-300">
-            <div className="h-16 flex items-center justify-between px-6 border-b border-sidebar-border">
-              <div className="flex items-center gap-2 font-serif font-medium text-lg tracking-tight">
-                <Command className="w-5 h-5 text-sidebar-primary" />
-                <span>Copilot</span>
-              </div>
-              <Button variant="ghost" size="icon" onClick={() => setMobileMenuOpen(false)} className="-mr-2 text-muted-foreground">
+          <div
+            className="fixed inset-0 bg-background/80 backdrop-blur-sm"
+            onClick={() => setMobileMenuOpen(false)}
+          />
+          <div className="relative w-72 max-w-[85%] bg-sidebar text-sidebar-foreground border-r border-sidebar-border shadow-2xl h-full flex flex-col animate-in slide-in-from-left duration-300">
+            <div className="absolute top-4 right-4">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setMobileMenuOpen(false)}
+                className="text-muted-foreground"
+              >
                 <X className="w-5 h-5" />
               </Button>
             </div>
-            
-            <div className="p-4 flex-1 overflow-y-auto">
-              <div className="text-xs font-semibold text-sidebar-foreground/60 uppercase tracking-[0.18em] mb-3 px-2">
-                Workspace
-              </div>
-              <nav className="space-y-1">
-                {navLinks.map((link) => {
-                  const Icon = link.icon;
-                  const active = isActive(link.href);
-                  return (
-                    <Link key={link.href} href={link.href} onClick={() => setMobileMenuOpen(false)} className={`flex items-center gap-3 px-3 py-2.5 rounded-full text-sm font-medium transition-colors ${active ? 'bg-sidebar-primary text-sidebar-primary-foreground' : 'text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'}`} data-testid={link.testId}>
-                      <Icon className="w-4 h-4" />
-                      {link.label}
-                    </Link>
-                  );
-                })}
-              </nav>
-            </div>
-            
-            <div className="p-4 border-t border-sidebar-border">
-              <div className="flex items-center gap-3 px-3 py-2">
-                <div className="w-8 h-8 rounded-full bg-sidebar-primary text-sidebar-primary-foreground flex items-center justify-center font-bold text-xs">
-                  FT
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-sm font-medium leading-none">Finance Team</span>
-                  <span className="text-xs text-sidebar-foreground/60 mt-1">Admin</span>
-                </div>
-              </div>
-            </div>
+            <SidebarContent onLinkClick={() => setMobileMenuOpen(false)} />
           </div>
         </div>
       )}
 
       {/* Sidebar (Desktop) */}
       <aside className="w-64 border-r border-sidebar-border bg-sidebar text-sidebar-foreground flex-shrink-0 flex-col hidden md:flex">
-        <div className="h-16 flex items-center px-6 border-b border-sidebar-border">
-          <div className="flex items-center gap-2 font-serif font-medium text-lg tracking-tight">
-            <Command className="w-5 h-5 text-sidebar-primary" />
-            <span>Copilot</span>
-          </div>
-        </div>
-        
-        <div className="p-4 flex-1 overflow-y-auto">
-          <div className="text-xs font-semibold text-sidebar-foreground/60 uppercase tracking-[0.18em] mb-3 px-2">
-            Workspace
-          </div>
-          <nav className="space-y-1">
-            {navLinks.map((link) => {
-              const Icon = link.icon;
-              const active = isActive(link.href);
-              return (
-                <Link key={link.href} href={link.href} className={`flex items-center gap-3 px-3 py-2.5 rounded-full text-sm font-medium transition-colors ${active ? 'bg-sidebar-primary text-sidebar-primary-foreground' : 'text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'}`} data-testid={link.testId}>
-                  <Icon className="w-4 h-4" />
-                  {link.label}
-                </Link>
-              );
-            })}
-          </nav>
-        </div>
-        
-        <div className="p-4 border-t border-sidebar-border">
-          <div className="flex items-center gap-3 px-3 py-2">
-            <div className="w-8 h-8 rounded-full bg-sidebar-primary text-sidebar-primary-foreground flex items-center justify-center font-bold text-xs">
-              FT
-            </div>
-            <div className="flex flex-col">
-              <span className="text-sm font-medium leading-none">Finance Team</span>
-              <span className="text-xs text-sidebar-foreground/60 mt-1">Admin</span>
-            </div>
-          </div>
-        </div>
+        <SidebarContent />
       </aside>
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col min-w-0 bg-background overflow-hidden relative">
         <header className="h-16 border-b border-border bg-background/90 backdrop-blur flex items-center justify-between px-6 flex-shrink-0 z-10 relative">
           <div className="flex items-center flex-1">
+            {/* Mobile: hamburger + page name */}
+            <div className="md:hidden flex items-center gap-3">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setMobileMenuOpen(true)}
+                className="-ml-2 text-muted-foreground"
+                aria-label="Open navigation menu"
+              >
+                <Menu className="w-5 h-5" />
+              </Button>
+              <div className="font-serif font-medium flex items-center gap-2">
+                <Command className="w-5 h-5 text-primary" />
+                <span className="text-sm">{currentItem?.label ?? "Copilot"}</span>
+              </div>
+            </div>
+
+            {/* Desktop: search */}
             <div className="relative w-full max-w-md hidden md:block">
               <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-              <input 
-                type="text" 
-                placeholder="Search invoices, customers, or amounts..." 
+              <input
+                type="text"
+                placeholder="Search invoices, customers, or amounts..."
                 className="w-full pl-9 pr-4 py-2 bg-card border border-border rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-ring/40 transition-all"
                 data-testid="global-search"
               />
             </div>
-            <div className="md:hidden flex items-center gap-3">
-              <Button variant="ghost" size="icon" onClick={() => setMobileMenuOpen(true)} className="-ml-2 text-muted-foreground">
-                <Menu className="w-5 h-5" />
-              </Button>
-               <div className="font-serif font-medium flex items-center gap-2">
-                  <Command className="w-5 h-5 text-primary" />
-                 Copilot
-              </div>
-            </div>
           </div>
-          
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" className="text-muted-foreground hidden sm:flex">
+
+          <div className="flex items-center gap-3">
+            <Button variant="ghost" size="icon" className="text-muted-foreground hidden sm:flex" aria-label="Notifications">
               <Bell className="w-4 h-4" />
             </Button>
-            <SettingsDialog />
+            <Link
+              href="/settings"
+              className={cn(
+                "hidden sm:flex items-center gap-2 h-9 px-3 rounded-md text-sm font-medium border transition-colors",
+                location.startsWith("/settings")
+                  ? "bg-primary text-primary-foreground border-primary"
+                  : "border-border text-muted-foreground hover:bg-secondary hover:text-foreground"
+              )}
+              data-testid="btn-settings-nav"
+            >
+              <Settings className="w-4 h-4" />
+              Settings
+            </Link>
           </div>
         </header>
-        
+
         <div className="flex-1 overflow-auto">
           {children}
         </div>
       </main>
     </div>
-  );
-}
-
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@workspace/ref-design/components/ui/dialog";
-import { Label } from "@workspace/ref-design/components/ui/label";
-import { Switch } from "@workspace/ref-design/components/ui/switch";
-import { useGetCollectionSettings, getGetCollectionSettingsQueryKey, useUpdateCollectionSettings } from "@workspace/api-client-react";
-import { useQueryClient } from "@tanstack/react-query";
-import { Loader2, Zap, ServerOff } from "lucide-react";
-
-function SettingsDialog() {
-  const { data: settings, isLoading } = useGetCollectionSettings();
-  const updateSettings = useUpdateCollectionSettings();
-  const queryClient = useQueryClient();
-
-  const handleToggle = (checked: boolean) => {
-    updateSettings.mutate({ data: { force_offline: checked } }, {
-      onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: getGetCollectionSettingsQueryKey() });
-        queryClient.invalidateQueries({ queryKey: ["/api/collections/dashboard"] });
-        queryClient.invalidateQueries({ queryKey: ["/api/collections/insights"] });
-      }
-    });
-  };
-
-  return (
-    <Dialog>
-      <DialogTrigger asChild>
-        <Button variant="outline" size="sm" className="gap-2" data-testid="btn-settings">
-          <Settings className="w-4 h-4" />
-          <span className="hidden sm:inline">Settings</span>
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle>Copilot Settings</DialogTitle>
-        </DialogHeader>
-        <div className="py-4">
-          {isLoading ? (
-            <div className="flex justify-center py-8">
-              <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
-            </div>
-          ) : settings ? (
-            <div className="space-y-6">
-              <div className="flex items-start justify-between">
-                <div className="space-y-1">
-                  <Label className="text-base font-semibold">Offline Mode (Fallback Engine)</Label>
-                  <p className="text-sm text-muted-foreground leading-relaxed">
-                    Disable the AI copilot engine and use basic rule-based fallbacks. Useful for testing resilience.
-                  </p>
-                </div>
-                <Switch 
-                  checked={settings.force_offline} 
-                  onCheckedChange={handleToggle}
-                  disabled={updateSettings.isPending}
-                  data-testid="switch-offline-mode"
-                />
-              </div>
-              
-              <div className="bg-secondary/50 rounded-lg p-4 border border-border">
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="text-sm font-medium">Active Engine Status</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  {settings.active_source === "ai" ? (
-                    <div className="flex items-center gap-2 text-emerald-600 bg-emerald-50 dark:bg-emerald-950/30 px-3 py-1.5 rounded-md text-sm font-medium" data-testid="status-engine-ai">
-                      <Zap className="w-4 h-4" />
-                      AI Copilot Active
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-2 text-amber-600 bg-amber-50 dark:bg-amber-950/30 px-3 py-1.5 rounded-md text-sm font-medium" data-testid="status-engine-fallback">
-                      <ServerOff className="w-4 h-4" />
-                      Fallback Rules Active
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div className="text-sm text-destructive">Failed to load settings</div>
-          )}
-        </div>
-      </DialogContent>
-    </Dialog>
   );
 }
