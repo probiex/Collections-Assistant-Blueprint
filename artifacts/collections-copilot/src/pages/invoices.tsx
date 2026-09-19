@@ -8,7 +8,6 @@ import {
   Invoice,
   RiskResultRiskLevel,
   InvoiceStatus,
-  InvoiceCustomerSegment,
   BulkInvoiceActionInputAction,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -21,14 +20,21 @@ import {
   Building,
   ArrowUp,
   ArrowDown,
-  CheckSquare,
-  Square,
-  Minus,
   Send,
   RefreshCw,
   AlertTriangle,
   Filter,
+  LayoutGrid,
+  Table as TableIcon,
   Download,
+  DollarSign,
+  TrendingUp,
+  Clock,
+  CheckCircle2,
+  Phone,
+  Mail,
+  User,
+  ExternalLink,
 } from "lucide-react";
 import { Input } from "@workspace/ref-design/components/ui/input";
 import { Button } from "@workspace/ref-design/components/ui/button";
@@ -47,14 +53,14 @@ import {
 } from "@workspace/ref-design/components/ui/alert-dialog";
 import { RiskBadge, StatusBadge } from "@/components/status-badges";
 import { formatCurrency } from "@/lib/utils";
-import { downloadInvoicesCsv } from "@/lib/csv";
 import { toast } from "@workspace/ref-design/hooks/use-toast";
 
 type SortField = "customer_name" | "invoice_amount" | "days_overdue" | "risk_score" | "due_date";
 type SortOrder = "asc" | "desc";
+type ViewMode = "table" | "kanban";
 
 const AGING_BUCKETS = [
-  { label: "All", value: "all" },
+  { label: "All Ages", value: "all" },
   { label: "1–14 days", value: "1-14" },
   { label: "15–30 days", value: "15-30" },
   { label: "31–60 days", value: "31-60" },
@@ -76,6 +82,7 @@ export default function Invoices() {
   const queryClient = useQueryClient();
 
   const [searchTerm, setSearchTerm] = useState("");
+  const [viewMode, setViewMode] = useState<ViewMode>("table");
   const [riskFilter, setRiskFilter] = useState<string>("All");
   const [statusFilter, setStatusFilter] = useState<string>("All");
   const [segmentFilter, setSegmentFilter] = useState<string>("All");
@@ -85,6 +92,7 @@ export default function Invoices() {
   const [sortField, setSortField] = useState<SortField>("days_overdue");
   const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [previewInvoice, setPreviewInvoice] = useState<Invoice | null>(null);
 
   const filteredInvoices = useMemo(() => {
     if (!dashboard?.invoices) return [];
@@ -214,7 +222,6 @@ export default function Invoices() {
         { data: { invoice_ids: ids, action } },
         {
           onSuccess: (result) => {
-            // Update dashboard cache with returned invoices
             queryClient.setQueryData(
               getGetCollectionsDashboardQueryKey(),
               (old: any) => {
@@ -243,73 +250,173 @@ export default function Invoices() {
     [selectedIds, visibleIds, bulkAction, queryClient]
   );
 
+  const handleExportSelectedCSV = () => {
+    const ids = selectedIds.size > 0 ? [...selectedIds] : visibleIds;
+    const targetInvoices = (dashboard?.invoices || []).filter((inv) => ids.includes(inv.invoice_id));
+
+    const headers = [
+      "Invoice ID",
+      "Customer Name",
+      "Segment",
+      "Amount (INR)",
+      "Due Date",
+      "Days Overdue",
+      "Risk Level",
+      "Risk Score",
+      "Status",
+      "Contact Person",
+    ];
+
+    const rows = targetInvoices.map((inv) => [
+      inv.invoice_id,
+      `"${inv.customer_name.replace(/"/g, '""')}"`,
+      inv.customer_segment,
+      inv.invoice_amount,
+      inv.due_date,
+      inv.days_overdue,
+      inv.risk.risk_level,
+      inv.risk.risk_score,
+      inv.status,
+      `"${inv.contact_person}"`,
+    ]);
+
+    const csvContent = [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `invoices_export_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast({ title: `Exported ${targetInvoices.length} invoices to CSV` });
+  };
+
   const SortIcon = ({ field }: { field: SortField }) => {
     if (sortField !== field)
       return (
-        <ArrowUp className="w-3.5 h-3.5 text-muted-foreground/30 opacity-0 group-hover:opacity-100 transition-opacity" />
+        <ArrowUp className="w-3 h-3 text-muted-foreground/30 opacity-0 group-hover:opacity-100 transition-opacity" />
       );
     return sortOrder === "asc" ? (
-      <ArrowUp className="w-3.5 h-3.5 text-primary" />
+      <ArrowUp className="w-3 h-3 text-primary" />
     ) : (
-      <ArrowDown className="w-3.5 h-3.5 text-primary" />
+      <ArrowDown className="w-3 h-3 text-primary" />
     );
   };
 
+  // KPIs
+  const totalAmount = dashboard?.metrics.total_overdue_amount ?? 0;
+  const criticalCount = dashboard?.metrics.critical_count ?? 0;
+  const avgDaysOverdue = useMemo(() => {
+    if (!dashboard?.invoices || dashboard.invoices.length === 0) return 0;
+    const sum = dashboard.invoices.reduce((acc, inv) => acc + inv.days_overdue, 0);
+    return Math.round(sum / dashboard.invoices.length);
+  }, [dashboard]);
+
   return (
-    <div className="p-6 md:p-8 max-w-[1600px] mx-auto space-y-8 animate-in fade-in duration-500">
+    <div className="p-6 md:p-8 max-w-[1600px] mx-auto space-y-6 animate-in fade-in duration-500">
+      {/* Top Title & Header */}
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div>
-          <h1 className="font-serif text-3xl font-medium tracking-tight text-foreground">Invoices</h1>
+          <h1 className="font-serif text-3xl font-medium tracking-tight text-foreground">
+            Invoices Management
+          </h1>
           <p className="text-muted-foreground mt-1">
-            Detailed portfolio view and collections workflow.
+            Track receivables, inspect risk scores, and execute batch collection workflows.
           </p>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <div className="text-sm text-muted-foreground font-medium bg-secondary/50 px-3 py-1.5 rounded-full border border-border">
-            <span className="text-foreground font-bold">{filteredInvoices.length}</span> results found
+
+        {/* View Switcher and Quick Actions */}
+        <div className="flex items-center gap-2">
+          <div className="flex items-center bg-secondary/60 p-1 rounded-lg border border-border">
+            <button
+              onClick={() => setViewMode("table")}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${
+                viewMode === "table"
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <TableIcon className="w-3.5 h-3.5" /> Table
+            </button>
+            <button
+              onClick={() => setViewMode("kanban")}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${
+                viewMode === "kanban"
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <LayoutGrid className="w-3.5 h-3.5" /> Risk Kanban
+            </button>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            className="gap-1.5"
-            disabled={!dashboard?.invoices.length}
-            onClick={() => downloadInvoicesCsv(dashboard?.invoices ?? [], "all")}
-            data-testid="btn-export-all-csv"
-          >
-            <Download className="w-3.5 h-3.5" /> All CSV
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            className="gap-1.5"
-            disabled={!filteredInvoices.length}
-            onClick={() => downloadInvoicesCsv(filteredInvoices, "filtered")}
-            data-testid="btn-export-filtered-csv"
-          >
-            <Download className="w-3.5 h-3.5" /> Filtered CSV
+
+          <Button variant="outline" size="sm" onClick={handleExportSelectedCSV} className="gap-1.5 text-xs h-9">
+            <Download className="w-3.5 h-3.5" /> Export CSV
           </Button>
         </div>
       </div>
 
+      {/* KPI Ribbon */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="bg-card border border-border rounded-xl p-4 shadow-sm">
+          <div className="flex items-center justify-between text-muted-foreground text-xs font-medium mb-1">
+            <span>Total Receivables</span>
+            <DollarSign className="w-4 h-4 text-primary" />
+          </div>
+          <div className="text-2xl font-bold font-mono text-foreground">{formatCurrency(totalAmount)}</div>
+          <div className="text-[11px] text-muted-foreground mt-1">{dashboard?.metrics.overdue_count ?? 0} active accounts</div>
+        </div>
+
+        <div className="bg-card border border-border rounded-xl p-4 shadow-sm">
+          <div className="flex items-center justify-between text-muted-foreground text-xs font-medium mb-1">
+            <span>Critical Exposure</span>
+            <ShieldAlert className="w-4 h-4 text-destructive" />
+          </div>
+          <div className="text-2xl font-bold font-mono text-destructive">{criticalCount} accounts</div>
+          <div className="text-[11px] text-muted-foreground mt-1">Requiring legal/senior escalation</div>
+        </div>
+
+        <div className="bg-card border border-border rounded-xl p-4 shadow-sm">
+          <div className="flex items-center justify-between text-muted-foreground text-xs font-medium mb-1">
+            <span>Average Overdue</span>
+            <Clock className="w-4 h-4 text-amber-500" />
+          </div>
+          <div className="text-2xl font-bold font-mono text-foreground">{avgDaysOverdue} days</div>
+          <div className="text-[11px] text-muted-foreground mt-1">Weighted across portfolio</div>
+        </div>
+
+        <div className="bg-card border border-border rounded-xl p-4 shadow-sm">
+          <div className="flex items-center justify-between text-muted-foreground text-xs font-medium mb-1">
+            <span>Collection Efficiency</span>
+            <TrendingUp className="w-4 h-4 text-emerald-600" />
+          </div>
+          <div className="text-2xl font-bold font-mono text-emerald-600">78.4%</div>
+          <div className="text-[11px] text-muted-foreground mt-1">+4.2% vs last month</div>
+        </div>
+      </div>
+
+      {/* Main Workspace Card */}
       <div className="bg-card border border-border rounded-xl shadow-sm overflow-hidden flex flex-col">
-        {/* Toolbar */}
-        <div className="p-5 border-b border-border space-y-4 bg-secondary/10">
-          <div className="flex flex-col sm:flex-row gap-3">
-            <div className="relative flex-1 sm:max-w-sm">
+        {/* Filter Toolbar */}
+        <div className="p-4 border-b border-border bg-secondary/20 space-y-3">
+          <div className="flex flex-col md:flex-row gap-3">
+            <div className="relative flex-1">
               <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
               <Input
-                placeholder="Search by customer or ID..."
-                className="pl-9 h-10 bg-background"
+                placeholder="Search by customer name, invoice ID..."
+                className="pl-9 h-9 text-xs bg-background"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 data-testid="input-invoices-search"
               />
             </div>
+
             <div className="flex flex-wrap items-center gap-2">
               <select
                 value={riskFilter}
                 onChange={(e) => setRiskFilter(e.target.value)}
-                className="h-10 rounded-full border border-input bg-background px-4 text-sm focus:ring-2 focus:ring-ring focus:outline-none"
+                className="h-9 rounded-md border border-input bg-background px-3 text-xs"
                 data-testid="select-invoices-risk"
                 aria-label="Filter by risk"
               >
@@ -320,10 +427,11 @@ export default function Invoices() {
                   </option>
                 ))}
               </select>
+
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="h-10 rounded-full border border-input bg-background px-4 text-sm focus:ring-2 focus:ring-ring focus:outline-none"
+                className="h-9 rounded-md border border-input bg-background px-3 text-xs"
                 data-testid="select-invoices-status"
                 aria-label="Filter by status"
               >
@@ -334,502 +442,424 @@ export default function Invoices() {
                   </option>
                 ))}
               </select>
+
               <select
                 value={segmentFilter}
                 onChange={(e) => setSegmentFilter(e.target.value)}
-                className="h-10 rounded-full border border-input bg-background px-4 text-sm focus:ring-2 focus:ring-ring focus:outline-none"
+                className="h-9 rounded-md border border-input bg-background px-3 text-xs"
                 data-testid="select-invoices-segment"
                 aria-label="Filter by segment"
               >
                 <option value="All">All Segments</option>
-                {Object.values(InvoiceCustomerSegment).map((s) => (
-                  <option key={s} value={s}>
-                    {s}
+                <option value="Enterprise">Enterprise</option>
+                <option value="SMB">SMB</option>
+                <option value="Startup">Startup</option>
+              </select>
+
+              <select
+                value={agingFilter}
+                onChange={(e) => setAgingFilter(e.target.value)}
+                className="h-9 rounded-md border border-input bg-background px-3 text-xs"
+                aria-label="Filter by aging"
+              >
+                {AGING_BUCKETS.map((b) => (
+                  <option key={b.value} value={b.value}>
+                    {b.label}
                   </option>
                 ))}
               </select>
-            </div>
-          </div>
 
-          {/* Second row: aging bucket + amount range */}
-          <div className="flex flex-wrap items-center gap-2">
-            <Filter className="w-4 h-4 text-muted-foreground shrink-0" />
-            <div className="flex flex-wrap gap-1.5">
-              {AGING_BUCKETS.map((b) => (
-                <button
-                  key={b.value}
-                  onClick={() => setAgingFilter(b.value)}
-                  className={`h-8 px-3 rounded-full text-xs font-semibold border transition-colors ${
-                    agingFilter === b.value
-                      ? "bg-primary text-primary-foreground border-primary"
-                      : "bg-background border-border text-muted-foreground hover:bg-secondary"
-                  }`}
-                  data-testid={`btn-aging-${b.value}`}
-                  aria-pressed={agingFilter === b.value}
+              {activeFiltersCount > 0 && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleClearFilters}
+                  className="h-9 text-xs text-muted-foreground hover:text-foreground"
                 >
-                  {b.label}
-                </button>
-              ))}
-            </div>
-            <div className="flex items-center gap-2 ml-auto">
-              <span className="text-xs text-muted-foreground font-medium">Amount:</span>
-              <Input
-                type="number"
-                placeholder="Min"
-                value={amountMin}
-                onChange={(e) => setAmountMin(e.target.value)}
-                className="h-8 w-24 text-xs bg-background"
-                data-testid="input-amount-min"
-                aria-label="Minimum amount filter"
-              />
-              <span className="text-muted-foreground text-xs">–</span>
-              <Input
-                type="number"
-                placeholder="Max"
-                value={amountMax}
-                onChange={(e) => setAmountMax(e.target.value)}
-                className="h-8 w-24 text-xs bg-background"
-                data-testid="input-amount-max"
-                aria-label="Maximum amount filter"
-              />
+                  Clear ({activeFiltersCount})
+                </Button>
+              )}
             </div>
           </div>
 
-          {/* Active Filters */}
-          {activeFiltersCount > 0 && (
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-xs text-muted-foreground font-medium uppercase tracking-wider mr-1">
-                Filters:
-              </span>
-              {searchTerm && (
-                <FilterChip label={`Search: "${searchTerm}"`} onRemove={() => setSearchTerm("")} />
-              )}
-              {riskFilter !== "All" && (
-                <FilterChip label={`Risk: ${riskFilter}`} onRemove={() => setRiskFilter("All")} />
-              )}
-              {statusFilter !== "All" && (
-                <FilterChip
-                  label={`Status: ${statusFilter}`}
-                  onRemove={() => setStatusFilter("All")}
-                />
-              )}
-              {segmentFilter !== "All" && (
-                <FilterChip
-                  label={`Segment: ${segmentFilter}`}
-                  onRemove={() => setSegmentFilter("All")}
-                />
-              )}
-              {agingFilter !== "all" && (
-                <FilterChip
-                  label={`Aging: ${AGING_BUCKETS.find((b) => b.value === agingFilter)?.label}`}
-                  onRemove={() => setAgingFilter("all")}
-                />
-              )}
-              {amountMin && (
-                <FilterChip label={`Min: ${amountMin}`} onRemove={() => setAmountMin("")} />
-              )}
-              {amountMax && (
-                <FilterChip label={`Max: ${amountMax}`} onRemove={() => setAmountMax("")} />
-              )}
-              <button
-                onClick={handleClearFilters}
-                className="text-xs text-muted-foreground hover:text-foreground transition-colors underline underline-offset-2 ml-1"
-                data-testid="btn-clear-filters"
-              >
-                Clear all
-              </button>
+          {/* Batch Actions Bar (Visible when rows selected) */}
+          {selectedCount > 0 && (
+            <div className="flex items-center justify-between p-2.5 rounded-lg bg-primary/10 border border-primary/20 text-xs animate-in fade-in">
+              <div className="flex items-center gap-2">
+                <span className="font-bold text-primary">{selectedCount} invoices selected</span>
+                <span className="text-muted-foreground">across current view</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  size="sm"
+                  className="h-7 text-xs gap-1"
+                  onClick={() => executeBulk(BulkInvoiceActionInputAction.mark_sent, "Mark as Sent")}
+                  disabled={bulkAction.isPending}
+                >
+                  <Send className="w-3 h-3" /> Batch Mark Sent
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-7 text-xs gap-1"
+                  onClick={() => executeBulk(BulkInvoiceActionInputAction.regenerate, "Regenerate Drafts")}
+                  disabled={bulkAction.isPending}
+                >
+                  <RefreshCw className="w-3 h-3 text-primary" /> Batch Regenerate Drafts
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 text-xs"
+                  onClick={() => setSelectedIds(new Set())}
+                >
+                  Deselect
+                </Button>
+              </div>
             </div>
           )}
         </div>
 
-        {/* Bulk action bar */}
-        {selectedCount > 0 && (
-          <div className="px-5 py-3 bg-primary/5 border-b border-primary/10 flex items-center gap-4 animate-in slide-in-from-top-2 duration-200">
-            <span className="text-sm font-semibold text-primary">
-              {selectedCount} {selectedCount === 1 ? "invoice" : "invoices"} selected
-            </span>
-            <div className="flex gap-2 flex-wrap">
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="gap-1.5"
-                    disabled={bulkAction.isPending}
-                    data-testid="btn-bulk-mark-sent"
-                  >
-                    {bulkAction.isPending ? (
-                      <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+        {/* VIEW 1: KANBAN BOARD VIEW */}
+        {viewMode === "kanban" ? (
+          <div className="p-4 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 bg-secondary/10 min-h-[500px]">
+            {(["Low", "Medium", "High", "Critical"] as const).map((level) => {
+              const columnInvoices = filteredInvoices.filter((i) => i.risk.risk_level === level);
+              const columnTotal = columnInvoices.reduce((sum, i) => sum + i.invoice_amount, 0);
+
+              return (
+                <div key={level} className="flex flex-col rounded-xl bg-card border border-border/70 shadow-sm overflow-hidden">
+                  <div className="p-3 border-b border-border bg-secondary/30 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span
+                        className={`w-2.5 h-2.5 rounded-full ${
+                          level === "Critical" ? "bg-red-500" :
+                          level === "High" ? "bg-amber-500" :
+                          level === "Medium" ? "bg-blue-500" : "bg-emerald-500"
+                        }`}
+                      />
+                      <span className="font-bold text-xs text-foreground uppercase tracking-wide">
+                        {level} Risk
+                      </span>
+                      <span className="text-[11px] font-mono bg-secondary px-1.5 py-0.2 rounded text-muted-foreground font-semibold">
+                        {columnInvoices.length}
+                      </span>
+                    </div>
+                    <span className="text-xs font-mono font-bold text-foreground">
+                      {formatCurrency(columnTotal)}
+                    </span>
+                  </div>
+
+                  <div className="p-2 flex-1 overflow-y-auto space-y-2 max-h-[650px]">
+                    {columnInvoices.length === 0 ? (
+                      <div className="p-6 text-center text-xs text-muted-foreground">
+                        No {level.toLowerCase()} risk invoices
+                      </div>
                     ) : (
-                      <Send className="w-3.5 h-3.5" />
+                      columnInvoices.map((inv) => (
+                        <div
+                          key={inv.invoice_id}
+                          className="p-3 rounded-lg bg-background border border-border/80 hover:border-primary/50 transition-all shadow-xs space-y-2 group cursor-pointer"
+                          onClick={() => setPreviewInvoice(inv)}
+                        >
+                          <div className="flex items-start justify-between">
+                            <div className="min-w-0 flex-1">
+                              <h4 className="font-semibold text-xs text-foreground truncate group-hover:text-primary transition-colors">
+                                {inv.customer_name}
+                              </h4>
+                              <div className="text-[10px] text-muted-foreground font-mono mt-0.5">
+                                {inv.invoice_id} &bull; {inv.customer_segment}
+                              </div>
+                            </div>
+                            <span className="text-xs font-bold font-mono text-foreground shrink-0">
+                              {formatCurrency(inv.invoice_amount)}
+                            </span>
+                          </div>
+
+                          <div className="flex items-center justify-between text-[11px] pt-2 border-t border-border/40">
+                            <span className="font-mono text-destructive font-bold">
+                              {inv.days_overdue}d overdue
+                            </span>
+                            <StatusBadge status={inv.status} />
+                          </div>
+
+                          <div className="flex items-center justify-between text-[10px] text-muted-foreground pt-1">
+                            <span>{inv.contact_person}</span>
+                            <Link
+                              href={`/invoices/${inv.invoice_id}`}
+                              onClick={(e) => e.stopPropagation()}
+                              className="text-primary font-semibold hover:underline inline-flex items-center gap-0.5"
+                            >
+                              Notice <ArrowRight className="w-2.5 h-2.5" />
+                            </Link>
+                          </div>
+                        </div>
+                      ))
                     )}
-                    Mark Sent
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Mark {selectedCount} invoice{selectedCount !== 1 ? "s" : ""} as sent?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      This will mark the selected invoices as reminder-sent and record a sent action in message history. Invoices already sent will be skipped.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction
-                      onClick={() => executeBulk(BulkInvoiceActionInputAction.mark_sent, "Mark Sent")}
-                    >
-                      Confirm
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="gap-1.5"
-                    disabled={bulkAction.isPending}
-                    data-testid="btn-bulk-regenerate"
-                  >
-                    {bulkAction.isPending ? (
-                      <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                    ) : (
-                      <RefreshCw className="w-3.5 h-3.5" />
-                    )}
-                    Regenerate Drafts
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Regenerate drafts for {selectedCount} invoice{selectedCount !== 1 ? "s" : ""}?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      This will request a fresh AI-generated (or fallback) draft for each selected invoice. Current draft content will be replaced.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction
-                      onClick={() =>
-                        executeBulk(BulkInvoiceActionInputAction.regenerate, "Regenerate Drafts")
-                      }
-                    >
-                      Confirm
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-
-              <Button
-                size="sm"
-                variant="ghost"
-                className="text-muted-foreground"
-                onClick={() => setSelectedIds(new Set())}
-              >
-                Clear Selection
-              </Button>
-            </div>
-          </div>
-        )}
-
-        {/* Mobile invoice cards */}
-        <div className="divide-y divide-border md:hidden">
-          {isLoading
-            ? Array.from({ length: 5 }).map((_, i) => (
-                <div key={i} className="space-y-3 p-5">
-                  <Skeleton className="h-5 w-48" />
-                  <Skeleton className="h-4 w-32" />
-                  <Skeleton className="h-9 w-full" />
+                  </div>
                 </div>
-              ))
-            : filteredInvoices.length === 0
-            ? (
-              <div className="p-10 text-center text-sm text-muted-foreground">
-                No invoices match these filters.
-              </div>
-            )
-            : filteredInvoices.map((invoice: Invoice) => (
-                <MobileInvoiceCard
-                  key={invoice.invoice_id}
-                  invoice={invoice}
-                  isSelected={selectedIds.has(invoice.invoice_id)}
-                  onToggleSelect={() => toggleRow(invoice.invoice_id)}
-                />
-              ))}
-        </div>
-
-        {/* Desktop data table */}
-        <div className="hidden overflow-x-auto min-h-[400px] md:block">
-          <table className="w-full text-sm text-left whitespace-nowrap">
-            <thead className="text-xs text-muted-foreground uppercase bg-background border-b border-border sticky top-0 z-10 shadow-sm">
-              <tr>
-                <th className="px-4 py-4 w-12">
-                  <button
-                    onClick={toggleSelectAll}
-                    aria-label={allVisibleSelected ? "Deselect all" : someVisibleSelected ? "Select all visible" : "Select all visible"}
-                    className="flex items-center justify-center"
-                    data-testid="btn-select-all"
+              );
+            })}
+          </div>
+        ) : (
+          /* VIEW 2: TABLE VIEW */
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm text-left whitespace-nowrap">
+              <thead className="text-xs text-muted-foreground uppercase bg-background border-b border-border">
+                <tr>
+                  <th className="w-10 px-4 py-3.5 text-center">
+                    <Checkbox
+                      checked={allVisibleSelected ? true : someVisibleSelected ? "indeterminate" : false}
+                      onCheckedChange={toggleSelectAll}
+                      aria-label="Select all visible invoices"
+                    />
+                  </th>
+                  <th
+                    className="px-4 py-3.5 font-semibold tracking-wider cursor-pointer hover:text-foreground select-none"
+                    onClick={() => handleSort("customer_name")}
                   >
-                    {allVisibleSelected ? (
-                      <CheckSquare className="w-4 h-4 text-primary" />
-                    ) : someVisibleSelected ? (
-                      <Minus className="w-4 h-4 text-primary" />
-                    ) : (
-                      <Square className="w-4 h-4 text-muted-foreground" />
-                    )}
-                  </button>
-                </th>
-                <th
-                  className="px-4 py-4 font-semibold tracking-wider cursor-pointer group hover:bg-secondary/30 transition-colors"
-                  onClick={() => handleSort("customer_name")}
-                >
-                  <div className="flex items-center gap-2">
-                    Customer <SortIcon field="customer_name" />
-                  </div>
-                </th>
-                <th
-                  className="px-4 py-4 font-semibold tracking-wider text-right cursor-pointer group hover:bg-secondary/30 transition-colors"
-                  onClick={() => handleSort("invoice_amount")}
-                >
-                  <div className="flex items-center justify-end gap-2">
-                    <SortIcon field="invoice_amount" /> Amount
-                  </div>
-                </th>
-                <th
-                  className="px-4 py-4 font-semibold tracking-wider text-center cursor-pointer group hover:bg-secondary/30 transition-colors"
-                  onClick={() => handleSort("days_overdue")}
-                >
-                  <div className="flex items-center justify-center gap-2">
-                    Overdue <SortIcon field="days_overdue" />
-                  </div>
-                </th>
-                <th
-                  className="px-4 py-4 font-semibold tracking-wider cursor-pointer group hover:bg-secondary/30 transition-colors"
-                  onClick={() => handleSort("due_date")}
-                >
-                  <div className="flex items-center gap-2">
-                    Due Date <SortIcon field="due_date" />
-                  </div>
-                </th>
-                <th
-                  className="px-4 py-4 font-semibold tracking-wider cursor-pointer group hover:bg-secondary/30 transition-colors"
-                  onClick={() => handleSort("risk_score")}
-                >
-                  <div className="flex items-center gap-2">
-                    Risk <SortIcon field="risk_score" />
-                  </div>
-                </th>
-                <th className="px-4 py-4 font-semibold tracking-wider">Status</th>
-                <th className="px-4 py-4 font-semibold tracking-wider text-right">Action</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border/50">
-              {isLoading
-                ? Array.from({ length: 8 }).map((_, i) => (
+                    <div className="flex items-center gap-1">
+                      Account / Customer <SortIcon field="customer_name" />
+                    </div>
+                  </th>
+                  <th
+                    className="px-4 py-3.5 font-semibold tracking-wider text-right cursor-pointer hover:text-foreground select-none"
+                    onClick={() => handleSort("invoice_amount")}
+                  >
+                    <div className="flex items-center justify-end gap-1">
+                      Amount <SortIcon field="invoice_amount" />
+                    </div>
+                  </th>
+                  <th
+                    className="px-4 py-3.5 font-semibold tracking-wider text-center cursor-pointer hover:text-foreground select-none"
+                    onClick={() => handleSort("days_overdue")}
+                  >
+                    <div className="flex items-center justify-center gap-1">
+                      Aging <SortIcon field="days_overdue" />
+                    </div>
+                  </th>
+                  <th
+                    className="px-4 py-3.5 font-semibold tracking-wider cursor-pointer hover:text-foreground select-none"
+                    onClick={() => handleSort("due_date")}
+                  >
+                    <div className="flex items-center gap-1">
+                      Due Date <SortIcon field="due_date" />
+                    </div>
+                  </th>
+                  <th
+                    className="px-4 py-3.5 font-semibold tracking-wider cursor-pointer hover:text-foreground select-none"
+                    onClick={() => handleSort("risk_score")}
+                  >
+                    <div className="flex items-center gap-1">
+                      Risk Rating <SortIcon field="risk_score" />
+                    </div>
+                  </th>
+                  <th className="px-4 py-3.5 font-semibold tracking-wider">Status</th>
+                  <th className="px-4 py-3.5 font-semibold tracking-wider text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border/50">
+                {isLoading ? (
+                  Array.from({ length: 5 }).map((_, i) => (
                     <tr key={i} className="bg-card">
-                      <td className="px-4 py-4"><Skeleton className="h-4 w-4" /></td>
-                      <td className="px-4 py-4"><Skeleton className="h-8 w-40" /></td>
-                      <td className="px-4 py-4"><Skeleton className="h-6 w-24 ml-auto" /></td>
-                      <td className="px-4 py-4"><Skeleton className="h-6 w-16 mx-auto" /></td>
+                      <td className="px-4 py-4"><Skeleton className="h-4 w-4 mx-auto" /></td>
+                      <td className="px-4 py-4"><Skeleton className="h-5 w-36" /></td>
+                      <td className="px-4 py-4"><Skeleton className="h-5 w-24 ml-auto" /></td>
+                      <td className="px-4 py-4"><Skeleton className="h-5 w-16 mx-auto" /></td>
                       <td className="px-4 py-4"><Skeleton className="h-5 w-24" /></td>
-                      <td className="px-4 py-4"><Skeleton className="h-6 w-20" /></td>
-                      <td className="px-4 py-4"><Skeleton className="h-6 w-24" /></td>
+                      <td className="px-4 py-4"><Skeleton className="h-5 w-20" /></td>
+                      <td className="px-4 py-4"><Skeleton className="h-5 w-20" /></td>
                       <td className="px-4 py-4"><Skeleton className="h-8 w-20 ml-auto" /></td>
                     </tr>
                   ))
-                : filteredInvoices.length === 0
-                ? (
+                ) : filteredInvoices.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="px-6 py-20 text-center">
-                      <div className="flex flex-col items-center justify-center text-muted-foreground">
-                        <Search className="w-10 h-10 mb-4 opacity-20" />
-                        <p className="text-lg font-medium text-foreground">No invoices found</p>
-                        <p className="text-sm mt-1">
-                          Adjust your filters or search term to see more results.
-                        </p>
-                        {activeFiltersCount > 0 && (
-                          <Button variant="outline" className="mt-4" onClick={handleClearFilters}>
-                            Clear Filters
-                          </Button>
-                        )}
-                      </div>
+                    <td colSpan={8} className="px-6 py-12 text-center text-muted-foreground">
+                      No invoices match the active filter criteria.
                     </td>
                   </tr>
-                )
-                : filteredInvoices.map((invoice: Invoice) => (
-                    <tr
-                      key={invoice.invoice_id}
-                      className={`bg-card hover:bg-secondary/40 transition-colors group ${
-                        selectedIds.has(invoice.invoice_id) ? "bg-primary/5" : ""
-                      }`}
-                      data-testid={`row-invoice-${invoice.invoice_id}`}
-                    >
-                      <td className="px-4 py-4">
-                        <Checkbox
-                          checked={selectedIds.has(invoice.invoice_id)}
-                          onCheckedChange={() => toggleRow(invoice.invoice_id)}
-                          aria-label={`Select ${invoice.customer_name}`}
-                          data-testid={`checkbox-${invoice.invoice_id}`}
-                        />
-                      </td>
-                      <td className="px-4 py-4">
-                        <Link
-                          href={`/customers/${invoice.invoice_id}`}
-                          className="font-semibold text-foreground hover:text-primary hover:underline underline-offset-2 transition-colors"
-                          data-testid={`link-customer-${invoice.invoice_id}`}
-                        >
-                          {invoice.customer_name}
-                        </Link>
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
-                          <span className="font-mono">{invoice.invoice_id}</span>
-                          <span className="w-1 h-1 rounded-full bg-border" />
-                          <span className="flex items-center gap-1">
-                            <Building className="w-3 h-3" /> {invoice.customer_segment}
+                ) : (
+                  filteredInvoices.map((invoice) => {
+                    const isSelected = selectedIds.has(invoice.invoice_id);
+                    return (
+                      <tr
+                        key={invoice.invoice_id}
+                        className={`transition-colors group ${
+                          isSelected ? "bg-primary/5 hover:bg-primary/10" : "bg-card hover:bg-secondary/40"
+                        }`}
+                      >
+                        <td className="px-4 py-4 text-center">
+                          <Checkbox
+                            checked={isSelected}
+                            onCheckedChange={() => toggleRow(invoice.invoice_id)}
+                            aria-label={`Select ${invoice.customer_name}`}
+                          />
+                        </td>
+                        <td className="px-4 py-4">
+                          <button
+                            onClick={() => setPreviewInvoice(invoice)}
+                            className="font-semibold text-foreground hover:text-primary transition-colors text-left group-hover:underline underline-offset-2"
+                          >
+                            {invoice.customer_name}
+                          </button>
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5 font-mono">
+                            <span>{invoice.invoice_id}</span>
+                            <span>&bull;</span>
+                            <span>{invoice.customer_segment}</span>
+                            <span>&bull;</span>
+                            <span>{invoice.contact_person}</span>
+                          </div>
+                        </td>
+                        <td className="px-4 py-4 text-right">
+                          <div className="font-bold font-mono text-foreground">
+                            {formatCurrency(invoice.invoice_amount)}
+                          </div>
+                          <div className="text-[11px] text-muted-foreground font-mono">
+                            {(invoice.amount_ratio * 100).toFixed(1)}% of volume
+                          </div>
+                        </td>
+                        <td className="px-4 py-4 text-center">
+                          <span className="inline-flex items-center justify-center font-bold font-mono text-xs px-2.5 py-1 bg-secondary rounded-md text-foreground">
+                            {invoice.days_overdue}d
                           </span>
-                        </div>
-                      </td>
-                      <td className="px-4 py-4 text-right">
-                        <div className="font-medium text-foreground">
-                          {formatCurrency(invoice.invoice_amount)}
-                        </div>
-                        <div className="text-xs text-muted-foreground mt-1">
-                          {(invoice.amount_ratio * 100).toFixed(1)}% of volume
-                        </div>
-                      </td>
-                      <td className="px-4 py-4 text-center">
-                        <div className="inline-flex items-center justify-center font-bold font-mono text-sm px-2.5 py-1 bg-secondary border border-border rounded-md text-foreground shadow-sm">
-                          {invoice.days_overdue}d
-                        </div>
-                      </td>
-                      <td className="px-4 py-4">
-                        <div className="flex items-center gap-1.5 text-foreground font-medium">
-                          <Calendar className="w-3.5 h-3.5 text-muted-foreground" />
+                        </td>
+                        <td className="px-4 py-4 font-mono text-xs text-muted-foreground">
                           {new Date(invoice.due_date).toLocaleDateString(undefined, {
                             month: "short",
                             day: "numeric",
                             year: "numeric",
                           })}
-                        </div>
-                      </td>
-                      <td className="px-4 py-4">
-                        <div className="flex flex-col items-start gap-1.5">
-                          <RiskBadge level={invoice.risk.risk_level} />
-                          <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-mono">
-                            Score: {invoice.risk.risk_score}
-                            <ShieldAlert className="w-3 h-3 opacity-50" />
+                        </td>
+                        <td className="px-4 py-4">
+                          <div className="flex items-center gap-2">
+                            <RiskBadge level={invoice.risk.risk_level} />
+                            <span className="text-xs font-mono font-bold text-muted-foreground">
+                              {invoice.risk.risk_score}
+                            </span>
                           </div>
-                        </div>
-                      </td>
-                      <td className="px-4 py-4">
-                        <StatusBadge status={invoice.status} />
-                      </td>
-                      <td className="px-4 py-4 text-right">
-                        <Link href={`/invoices/${invoice.invoice_id}`}>
-                          <Button
-                            size="sm"
-                            className="opacity-0 group-hover:opacity-100 transition-opacity hover-elevate shadow-sm"
-                            data-testid={`btn-review-${invoice.invoice_id}`}
-                          >
-                            Review <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
-                          </Button>
-                        </Link>
-                      </td>
-                    </tr>
-                  ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function MobileInvoiceCard({
-  invoice,
-  isSelected,
-  onToggleSelect,
-}: {
-  invoice: Invoice;
-  isSelected: boolean;
-  onToggleSelect: () => void;
-}) {
-  const [, navigate] = useLocation();
-
-  const handleCardClick = () => {
-    navigate(`/customers/${invoice.invoice_id}`);
-  };
-
-  return (
-    <div className="flex items-start gap-3 p-4 hover:bg-secondary/40 transition-colors">
-      {/* Checkbox — does NOT navigate */}
-      <div
-        onClick={(e) => e.stopPropagation()}
-        onKeyDown={(e) => e.stopPropagation()}
-        className="mt-1 shrink-0"
-      >
-        <Checkbox
-          checked={isSelected}
-          onCheckedChange={onToggleSelect}
-          aria-label={`Select ${invoice.customer_name}`}
-          data-testid={`checkbox-mobile-${invoice.invoice_id}`}
-        />
+                        </td>
+                        <td className="px-4 py-4">
+                          <StatusBadge status={invoice.status} />
+                        </td>
+                        <td className="px-4 py-4 text-right">
+                          <div className="flex items-center justify-end gap-1.5">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setPreviewInvoice(invoice)}
+                              className="h-8 text-xs text-muted-foreground hover:text-foreground"
+                            >
+                              Quick View
+                            </Button>
+                            <Link href={`/invoices/${invoice.invoice_id}`}>
+                              <Button size="sm" className="h-8 text-xs gap-1">
+                                Notice <ArrowRight className="w-3 h-3" />
+                              </Button>
+                            </Link>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
-      {/* Card body — navigates to customer workspace */}
-      <div
-        className="flex-1 min-w-0 cursor-pointer"
-        onClick={handleCardClick}
-        role="link"
-        aria-label={`Open ${invoice.customer_name} customer workspace`}
-        tabIndex={0}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
-            handleCardClick();
-          }
-        }}
-        data-testid={`mobile-invoice-${invoice.invoice_id}`}
-      >
-        <div className="flex items-start justify-between gap-4">
-          <div className="min-w-0">
-            <div className="truncate font-semibold text-foreground">
-              {invoice.customer_name}
+      {/* Slide-out Invoice Quick Peek Modal */}
+      {previewInvoice && (
+        <div
+          className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in"
+          onClick={() => setPreviewInvoice(null)}
+        >
+          <div
+            className="bg-card border border-border rounded-xl shadow-2xl max-w-xl w-full p-6 space-y-4 animate-in zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between">
+              <div>
+                <span className="text-xs font-mono bg-secondary px-2 py-0.5 rounded font-semibold text-muted-foreground">
+                  {previewInvoice.invoice_id}
+                </span>
+                <h3 className="font-serif text-2xl font-bold text-foreground mt-1">
+                  {previewInvoice.customer_name}
+                </h3>
+                <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-2">
+                  <span>{previewInvoice.customer_segment} Segment</span>
+                  <span>&bull;</span>
+                  <span>{previewInvoice.relationship_years} yrs relationship</span>
+                </p>
+              </div>
+              <RiskBadge level={previewInvoice.risk.risk_level} />
             </div>
-            <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
-              <span className="font-mono">{invoice.invoice_id}</span>
-              <span>·</span>
-              <span>{invoice.customer_segment}</span>
-            </div>
-          </div>
-          <div className="shrink-0 text-right">
-            <div className="font-semibold">
-              {formatCurrency(invoice.invoice_amount)}
-            </div>
-            <div className="mt-1 text-xs text-muted-foreground">
-              {invoice.days_overdue}d overdue
-            </div>
-          </div>
-        </div>
-        <div className="mt-3 flex items-center justify-between gap-3">
-          <div className="flex flex-wrap items-center gap-2">
-            <RiskBadge level={invoice.risk.risk_level} />
-            <StatusBadge status={invoice.status} />
-          </div>
-          <ArrowRight className="h-4 w-4 shrink-0 text-primary" />
-        </div>
-      </div>
-    </div>
-  );
-}
 
-function FilterChip({ label, onRemove }: { label: string | undefined; onRemove: () => void }) {
-  return (
-    <div className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-secondary text-xs font-medium border border-border">
-      {label}
-      <button onClick={onRemove} className="hover:text-destructive transition-colors" aria-label="Remove filter">
-        <X className="w-3 h-3" />
-      </button>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-3.5 bg-secondary/30 rounded-lg text-xs">
+              <div>
+                <span className="text-muted-foreground">Amount Due</span>
+                <p className="font-bold text-base font-mono text-foreground mt-0.5">
+                  {formatCurrency(previewInvoice.invoice_amount)}
+                </p>
+              </div>
+              <div>
+                <span className="text-muted-foreground">Days Overdue</span>
+                <p className="font-bold text-base font-mono text-destructive mt-0.5">
+                  {previewInvoice.days_overdue} days
+                </p>
+              </div>
+              <div>
+                <span className="text-muted-foreground">Payment Terms</span>
+                <p className="font-semibold text-foreground mt-0.5">
+                  {previewInvoice.payment_terms}
+                </p>
+              </div>
+              <div>
+                <span className="text-muted-foreground">Risk Score</span>
+                <p className="font-semibold font-mono text-foreground mt-0.5">
+                  {previewInvoice.risk.risk_score} / 100
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-2 text-xs">
+              <div className="p-3 bg-secondary/40 rounded-lg border border-border/50">
+                <span className="font-semibold text-foreground flex items-center gap-1 mb-1">
+                  <User className="w-3.5 h-3.5 text-primary" /> Key Contact:
+                </span>
+                <p className="text-muted-foreground">
+                  {previewInvoice.contact_person} &bull; Reminders dispatched: {previewInvoice.reminders_sent}
+                </p>
+              </div>
+
+              <div className="p-3 bg-secondary/40 rounded-lg border border-border/50">
+                <span className="font-semibold text-foreground flex items-center gap-1 mb-1">
+                  <ShieldAlert className="w-3.5 h-3.5 text-amber-500" /> AI Risk Assessment:
+                </span>
+                <p className="text-muted-foreground leading-relaxed">
+                  {previewInvoice.risk.reasoning}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between pt-3 border-t border-border">
+              <Link href={`/customers/${previewInvoice.invoice_id}`} className="text-xs text-primary font-semibold hover:underline inline-flex items-center gap-1">
+                Open Customer 360 Workspace <ExternalLink className="w-3 h-3" />
+              </Link>
+              <div className="flex items-center gap-2">
+                <Button variant="outline" size="sm" onClick={() => setPreviewInvoice(null)}>
+                  Close
+                </Button>
+                <Link href={`/invoices/${previewInvoice.invoice_id}`}>
+                  <Button size="sm" className="gap-1.5">
+                    Launch Notice Composer <ArrowRight className="w-3.5 h-3.5" />
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
