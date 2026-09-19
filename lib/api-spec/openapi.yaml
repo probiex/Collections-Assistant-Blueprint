@@ -1,22 +1,19 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Collections Copilot API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
-    description: Health operations
+  - name: collections
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
-      summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,13 +21,301 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /collections/dashboard:
+    get:
+      operationId: getCollectionsDashboard
+      tags: [collections]
+      responses:
+        "200":
+          description: Portfolio summary and risk-ranked invoices
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Dashboard"
+  /collections/invoices/{invoiceId}:
+    get:
+      operationId: getCollectionInvoice
+      tags: [collections]
+      parameters:
+        - $ref: "#/components/parameters/InvoiceId"
+      responses:
+        "200":
+          description: Invoice details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Invoice"
+        "404":
+          description: Not found
+  /collections/invoices/{invoiceId}/draft:
+    post:
+      operationId: regenerateCollectionDraft
+      tags: [collections]
+      parameters:
+        - $ref: "#/components/parameters/InvoiceId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DraftRegenerationInput"
+      responses:
+        "200":
+          description: Regenerated draft
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResult"
+        "404":
+          description: Not found
+  /collections/invoices/{invoiceId}/send:
+    post:
+      operationId: markCollectionMessageSent
+      tags: [collections]
+      parameters:
+        - $ref: "#/components/parameters/InvoiceId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SendMessageInput"
+      responses:
+        "200":
+          description: Updated invoice
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Invoice"
+        "404":
+          description: Not found
+  /collections/settings:
+    get:
+      operationId: getCollectionSettings
+      tags: [collections]
+      responses:
+        "200":
+          description: Demo engine settings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CollectionSettings"
+    patch:
+      operationId: updateCollectionSettings
+      tags: [collections]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CollectionSettingsInput"
+      responses:
+        "200":
+          description: Updated demo engine settings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CollectionSettings"
+  /collections/insights:
+    get:
+      operationId: getCollectionInsights
+      tags: [collections]
+      responses:
+        "200":
+          description: Portfolio action summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CollectionInsights"
+  /collections/reset:
+    post:
+      operationId: resetCollectionsDemo
+      tags: [collections]
+      responses:
+        "200":
+          description: Reset confirmation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResetResult"
 components:
+  parameters:
+    InvoiceId:
+      name: invoiceId
+      in: path
+      required: true
+      schema:
+        type: string
   schemas:
     HealthStatus:
       type: object
+      required: [status]
       properties:
         status:
           type: string
+    RiskResult:
+      type: object
+      required: [risk_level, risk_score, reasoning, source]
+      properties:
+        risk_level:
+          type: string
+          enum: [Low, Medium, High, Critical]
+        risk_score:
+          type: integer
+          minimum: 0
+          maximum: 100
+        reasoning:
+          type: string
+          minLength: 1
+        source:
+          type: string
+          enum: [ai, fallback]
+    MessageResult:
+      type: object
+      required: [subject, message, tone_used, source]
+      properties:
+        subject:
+          type: string
+          minLength: 1
+        message:
+          type: string
+          minLength: 1
+        tone_used:
+          type: string
+          enum: [gentle, firm, serious, final]
+        source:
+          type: string
+          enum: [ai, fallback]
+    Invoice:
+      type: object
       required:
+        - invoice_id
+        - customer_name
+        - customer_segment
+        - contact_person
+        - invoice_amount
+        - invoice_date
+        - due_date
+        - payment_terms
+        - payment_history
+        - reminders_sent
+        - relationship_years
+        - annual_volume
         - status
-
+        - notes
+        - days_overdue
+        - amount_ratio
+        - risk
+        - draft
+      properties:
+        invoice_id: { type: string }
+        customer_name: { type: string }
+        customer_segment:
+          type: string
+          enum: [Enterprise, SMB, Startup]
+        contact_person: { type: string }
+        invoice_amount: { type: number }
+        invoice_date: { type: string, format: date }
+        due_date: { type: string, format: date }
+        payment_terms: { type: string }
+        payment_history: { type: string }
+        reminders_sent: { type: integer }
+        last_reminder_date:
+          type: [string, "null"]
+          format: date
+        relationship_years: { type: number }
+        annual_volume: { type: number }
+        status:
+          type: string
+          enum: [Overdue, Reminder Sent, Escalated]
+        notes: { type: string }
+        days_overdue: { type: integer }
+        amount_ratio: { type: number }
+        risk:
+          $ref: "#/components/schemas/RiskResult"
+        draft:
+          $ref: "#/components/schemas/MessageResult"
+        sent_at:
+          type: [string, "null"]
+          format: date-time
+    PortfolioMetrics:
+      type: object
+      required: [total_overdue_amount, overdue_count, critical_count, high_count, medium_count, low_count, amount_requiring_action]
+      properties:
+        total_overdue_amount: { type: number }
+        overdue_count: { type: integer }
+        critical_count: { type: integer }
+        high_count: { type: integer }
+        medium_count: { type: integer }
+        low_count: { type: integer }
+        amount_requiring_action: { type: number }
+    Dashboard:
+      type: object
+      required: [metrics, invoices, reference_date, engine_source]
+      properties:
+        metrics:
+          $ref: "#/components/schemas/PortfolioMetrics"
+        invoices:
+          type: array
+          items:
+            $ref: "#/components/schemas/Invoice"
+        reference_date:
+          type: string
+          format: date
+        engine_source:
+          type: string
+          enum: [ai, fallback]
+    DraftRegenerationInput:
+      type: object
+      required: [direction]
+      properties:
+        direction:
+          type: string
+          enum: [recommended, softer, firmer]
+    SendMessageInput:
+      type: object
+      required: [subject, message, tone_used]
+      properties:
+        subject:
+          type: string
+          minLength: 1
+        message:
+          type: string
+          minLength: 1
+        tone_used:
+          type: string
+          enum: [gentle, firm, serious, final]
+    CollectionSettings:
+      type: object
+      required: [force_offline, active_source, ai_available, reference_date]
+      properties:
+        force_offline: { type: boolean }
+        active_source:
+          type: string
+          enum: [ai, fallback]
+        ai_available: { type: boolean }
+        reference_date:
+          type: string
+          format: date
+    CollectionSettingsInput:
+      type: object
+      required: [force_offline]
+      properties:
+        force_offline: { type: boolean }
+    CollectionInsights:
+      type: object
+      required: [critical_exposure, action_accounts, top_customer_concentration, summary, source]
+      properties:
+        critical_exposure: { type: number }
+        action_accounts: { type: integer }
+        top_customer_concentration: { type: number }
+        summary: { type: string }
+        source:
+          type: string
+          enum: [ai, fallback]
+    ResetResult:
+      type: object
+      required: [reset, invoice_count]
+      properties:
+        reset: { type: boolean }
+        invoice_count: { type: integer }

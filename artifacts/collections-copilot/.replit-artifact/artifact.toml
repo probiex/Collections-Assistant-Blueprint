@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "Collections Copilot"
+description = "A resilient collections workspace for finance teams that prioritizes overdue invoices, explains risk, drafts relationship-aware follow-ups, and continues through an offline rules engine whenever AI is unavailable."
+version = "1.0.0"
+id = "artifacts/collections-copilot"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 23481
+
+[services.development]
+run = "pnpm --filter @workspace/collections-copilot run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/collections-copilot", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/collections-copilot/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "23481"
+BASE_PATH = "/"
