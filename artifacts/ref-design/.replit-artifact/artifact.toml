@@ -1,0 +1,19 @@
+kind = "design-system"
+previewPath = "/ref-design/"
+title = "ref_design"
+description = "A warm, nature-led interface system extracted from the Bali Retreat Expense Tracker, combining quiet editorial typography, organic sage and terracotta colors, rounded tactile surfaces, and calm data visualization patterns."
+version = "1.0.0"
+id = "artifacts/ref-design"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/ref-design/" ]
+localPort = 21469
+
+[services.development]
+run = "pnpm --filter @workspace/ref-design run dev"
+
+[services.env]
+PORT = "21469"
+BASE_PATH = "/ref-design/"
