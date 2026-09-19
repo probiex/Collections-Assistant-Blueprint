@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from "react";
 
-export const WALKTHROUGH_VERSION = "1.0.0";
+export const WALKTHROUGH_VERSION = "2.0.0";
 const STORAGE_KEY = "collections_copilot_onboarding";
 
 interface OnboardingState {

@@ -1,4 +1,4 @@
-import { ReactNode, useState, useMemo } from "react";
+import { ReactNode, useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { Link, useLocation } from "wouter";
 import {
   Search,
@@ -23,7 +23,7 @@ import { Button } from "@workspace/ref-design/components/ui/button";
 import { useGetCollectionSettings, useGetCollectionsDashboard } from "@workspace/api-client-react";
 import { cn } from "@workspace/ref-design/lib/utils";
 import { useOnboardingContext } from "@/components/walkthrough/onboarding-context";
-import { WalkthroughModal } from "@/components/walkthrough/walkthrough-modal";
+import { CoachMark } from "@/components/walkthrough/coach-mark";
 import { WALKTHROUGH_STEPS } from "@/components/walkthrough/steps";
 
 interface NavItem {
@@ -354,7 +354,7 @@ export function Layout({ children }: LayoutProps) {
 
               {/* Floating search dropdown */}
               {showResults && searchQuery.trim().length > 0 && (
-                <div 
+                <div
                   className="absolute top-full mt-2 left-0 right-0 bg-popover text-popover-foreground border border-border rounded-xl shadow-xl z-50 overflow-hidden divide-y divide-border/60 animate-in fade-in slide-in-from-top-2 duration-200"
                   onMouseDown={(e) => e.preventDefault()}
                 >
@@ -434,25 +434,96 @@ export function Layout({ children }: LayoutProps) {
         </div>
       </main>
 
-      {/* Global walkthrough modal */}
-      <WalkthroughPortal />
+      {/* Coach-mark tour */}
+      <WalkthroughPortal
+        mobileMenuOpen={mobileMenuOpen}
+        setMobileMenuOpen={setMobileMenuOpen}
+      />
     </div>
   );
 }
 
-function WalkthroughPortal() {
-  const { walkthroughOpen, stepIndex, next, back, goTo, close, complete } =
+interface WalkthroughPortalProps {
+  mobileMenuOpen: boolean;
+  setMobileMenuOpen: (open: boolean) => void;
+}
+
+function WalkthroughPortal({ mobileMenuOpen, setMobileMenuOpen }: WalkthroughPortalProps) {
+  const { walkthroughOpen, stepIndex, next, back, close, complete } =
     useOnboardingContext();
+  const [, setLocation] = useLocation();
+
+  const total = WALKTHROUGH_STEPS.length;
+  const step = WALKTHROUGH_STEPS[stepIndex];
+  const isFirst = stepIndex === 0;
+  const isLast = stepIndex === total - 1;
+
+  const prevRouteRef = useRef<string>("");
+  const prevStepRef = useRef<number>(-1);
+  const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
+
+  // Navigate to the step's route when step changes
+  useEffect(() => {
+    if (!walkthroughOpen || !step) return;
+    if (step.route !== prevRouteRef.current) {
+      prevRouteRef.current = step.route;
+      setLocation(step.route);
+    }
+  }, [walkthroughOpen, step, setLocation]);
+
+  // On mobile: open the mobile menu so the sidebar items are visible, then close
+  // it briefly after the coach mark renders (so item is accessible but menu isn't blocking)
+  useEffect(() => {
+    if (!walkthroughOpen || !step) return;
+    if (stepIndex === prevStepRef.current) return;
+    prevStepRef.current = stepIndex;
+
+    if (isMobile) {
+      // Open mobile menu so the target element becomes visible
+      setMobileMenuOpen(true);
+      // After the mark positions itself, we leave the menu open so the
+      // user can see the highlighted item. The close button / skip will
+      // close it via normal flow.
+    }
+  }, [walkthroughOpen, stepIndex, step, isMobile, setMobileMenuOpen]);
+
+  const handleClose = useCallback(() => {
+    close();
+    if (isMobile) setMobileMenuOpen(false);
+  }, [close, isMobile, setMobileMenuOpen]);
+
+  const handleSkip = useCallback(() => {
+    complete();
+    if (isMobile) setMobileMenuOpen(false);
+  }, [complete, isMobile, setMobileMenuOpen]);
+
+  const handleComplete = useCallback(() => {
+    complete();
+    if (isMobile) setMobileMenuOpen(false);
+  }, [complete, isMobile, setMobileMenuOpen]);
+
+  const handleNext = useCallback(() => {
+    next(total);
+  }, [next, total]);
+
+  if (!step) return null;
+
   return (
-    <WalkthroughModal
+    <CoachMark
       open={walkthroughOpen}
       stepIndex={stepIndex}
-      onNext={() => next(WALKTHROUGH_STEPS.length)}
+      total={total}
+      targetTestId={step.targetTestId}
+      title={step.title}
+      body={step.body}
+      isFirst={isFirst}
+      isLast={isLast}
+      onNext={handleNext}
       onBack={back}
-      onGoTo={goTo}
-      onClose={close}
-      onSkip={complete}
-      onComplete={complete}
+      onClose={handleClose}
+      onSkip={handleSkip}
+      onComplete={handleComplete}
     />
   );
 }
+
