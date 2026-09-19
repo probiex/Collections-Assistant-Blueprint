@@ -23,9 +23,11 @@ import {
   Settings2,
   ChevronRight,
   Info,
+  RotateCcw,
 } from "lucide-react";
 import { toast } from "@workspace/ref-design/hooks/use-toast";
 import { cn } from "@workspace/ref-design/lib/utils";
+import { useOnboardingContext } from "@/components/walkthrough/onboarding-context";
 
 function SectionHeader({ icon, title, description }: { icon: React.ReactNode; title: string; description: string }) {
   return (
@@ -45,6 +47,7 @@ export default function Settings() {
   const { data: settings, isLoading } = useGetCollectionSettings();
   const updateSettings = useUpdateCollectionSettings();
   const queryClient = useQueryClient();
+  const { restart: restartOnboarding } = useOnboardingContext();
 
   // Form state
   const [companyName, setCompanyName] = useState("");
@@ -344,6 +347,30 @@ export default function Settings() {
           >
             <Save className="w-4 h-4" />
             Save Thresholds
+          </Button>
+        </div>
+      </div>
+
+      {/* Onboarding */}
+      <div className="bg-card border border-border rounded-xl p-6 shadow-sm">
+        <SectionHeader
+          icon={<RotateCcw className="w-4 h-4 text-muted-foreground" />}
+          title="Onboarding"
+          description="Replay the guided tour of every Collections Copilot tab"
+        />
+
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <p className="text-sm text-muted-foreground leading-relaxed max-w-2xl">
+            Reset your onboarding progress and start the tab-by-tab walkthrough again from Overview.
+          </p>
+          <Button
+            variant="outline"
+            onClick={restartOnboarding}
+            className="gap-2 shrink-0"
+            data-testid="btn-reset-onboarding"
+          >
+            <RotateCcw className="w-4 h-4" />
+            Reset onboarding
           </Button>
         </div>
       </div>
