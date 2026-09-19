@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { Link } from "wouter";
 import { useGetCollectionsDashboard, useGetCollectionSettings, RiskResultRiskLevel, DashboardEngineSource } from "@workspace/api-client-react";
 import { Skeleton } from "@workspace/ref-design/components/ui/skeleton";
 import { Zap, ServerOff, Info, Activity, GitCommit, Settings2, BarChart2 } from "lucide-react";
@@ -190,7 +191,13 @@ export default function RiskModels() {
                   ) : dashboard?.invoices.map(inv => (
                     <tr key={inv.invoice_id} className="bg-card hover:bg-secondary/20 transition-colors group">
                       <td className="px-6 py-4 align-top">
-                        <div className="font-semibold text-foreground whitespace-nowrap">{inv.customer_name}</div>
+                        <Link
+                          href={`/customers/${inv.invoice_id}`}
+                          className="font-semibold text-foreground whitespace-nowrap hover:text-primary hover:underline underline-offset-2 transition-colors block"
+                          data-testid={`link-risk-customer-${inv.invoice_id}`}
+                        >
+                          {inv.customer_name}
+                        </Link>
                         <div className="text-xs text-muted-foreground mt-1 font-medium">{inv.customer_segment}</div>
                       </td>
                       <td className="px-6 py-4 align-top text-center">

@@ -440,7 +440,12 @@ export default function Messages() {
                                 {entry.message}
                               </p>
                             </div>
-                            <div className="flex items-center gap-2 pt-1">
+                            <div className="flex items-center gap-2 pt-1 flex-wrap">
+                              <Link href={`/customers/${entry.invoice_id}`}>
+                                <Button variant="outline" size="sm" className="gap-1.5">
+                                  Customer Profile <ArrowRight className="w-3.5 h-3.5" />
+                                </Button>
+                              </Link>
                               <Link href={`/invoices/${entry.invoice_id}`}>
                                 <Button variant="outline" size="sm" className="gap-1.5">
                                   View Invoice <ArrowRight className="w-3.5 h-3.5" />

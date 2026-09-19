@@ -21,6 +21,7 @@ import PaymentCollection from '@/pages/payment-collection';
 import Integrations from '@/pages/integrations';
 import Export from '@/pages/export';
 import Settings from '@/pages/settings';
+import CustomerWorkspace from '@/pages/customer-workspace';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -39,6 +40,7 @@ function Router() {
           <Route path="/" component={Dashboard} />
           <Route path="/invoices" component={Invoices} />
           <Route path="/invoices/:id" component={InvoiceDetail} />
+          <Route path="/customers/:invoiceId" component={CustomerWorkspace} />
           <Route path="/messages" component={Messages} />
           <Route path="/reports" component={Reports} />
           <Route path="/payment-collection" component={PaymentCollection} />

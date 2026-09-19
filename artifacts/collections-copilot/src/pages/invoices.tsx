@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback } from "react";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import {
   useGetCollectionsDashboard,
   useBulkCollectionInvoiceAction,
@@ -526,47 +526,12 @@ export default function Invoices() {
               </div>
             )
             : filteredInvoices.map((invoice: Invoice) => (
-                <div key={invoice.invoice_id} className="flex items-start gap-3 p-4 hover:bg-secondary/40">
-                  <Checkbox
-                    checked={selectedIds.has(invoice.invoice_id)}
-                    onCheckedChange={() => toggleRow(invoice.invoice_id)}
-                    aria-label={`Select ${invoice.customer_name}`}
-                    className="mt-1"
-                  />
-                  <Link
-                    href={`/invoices/${invoice.invoice_id}`}
-                    className="flex-1 min-w-0"
-                    data-testid={`mobile-invoice-${invoice.invoice_id}`}
-                  >
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="min-w-0">
-                        <div className="truncate font-semibold text-foreground">
-                          {invoice.customer_name}
-                        </div>
-                        <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
-                          <span className="font-mono">{invoice.invoice_id}</span>
-                          <span>·</span>
-                          <span>{invoice.customer_segment}</span>
-                        </div>
-                      </div>
-                      <div className="shrink-0 text-right">
-                        <div className="font-semibold">
-                          {formatCurrency(invoice.invoice_amount)}
-                        </div>
-                        <div className="mt-1 text-xs text-muted-foreground">
-                          {invoice.days_overdue}d overdue
-                        </div>
-                      </div>
-                    </div>
-                    <div className="mt-3 flex items-center justify-between gap-3">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <RiskBadge level={invoice.risk.risk_level} />
-                        <StatusBadge status={invoice.status} />
-                      </div>
-                      <ArrowRight className="h-4 w-4 shrink-0 text-primary" />
-                    </div>
-                  </Link>
-                </div>
+                <MobileInvoiceCard
+                  key={invoice.invoice_id}
+                  invoice={invoice}
+                  isSelected={selectedIds.has(invoice.invoice_id)}
+                  onToggleSelect={() => toggleRow(invoice.invoice_id)}
+                />
               ))}
         </div>
 
@@ -685,9 +650,13 @@ export default function Invoices() {
                         />
                       </td>
                       <td className="px-4 py-4">
-                        <div className="font-semibold text-foreground">
+                        <Link
+                          href={`/customers/${invoice.invoice_id}`}
+                          className="font-semibold text-foreground hover:text-primary hover:underline underline-offset-2 transition-colors"
+                          data-testid={`link-customer-${invoice.invoice_id}`}
+                        >
                           {invoice.customer_name}
-                        </div>
+                        </Link>
                         <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
                           <span className="font-mono">{invoice.invoice_id}</span>
                           <span className="w-1 h-1 rounded-full bg-border" />
@@ -746,6 +715,84 @@ export default function Invoices() {
                   ))}
             </tbody>
           </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function MobileInvoiceCard({
+  invoice,
+  isSelected,
+  onToggleSelect,
+}: {
+  invoice: Invoice;
+  isSelected: boolean;
+  onToggleSelect: () => void;
+}) {
+  const [, navigate] = useLocation();
+
+  const handleCardClick = () => {
+    navigate(`/customers/${invoice.invoice_id}`);
+  };
+
+  return (
+    <div className="flex items-start gap-3 p-4 hover:bg-secondary/40 transition-colors">
+      {/* Checkbox — does NOT navigate */}
+      <div
+        onClick={(e) => e.stopPropagation()}
+        onKeyDown={(e) => e.stopPropagation()}
+        className="mt-1 shrink-0"
+      >
+        <Checkbox
+          checked={isSelected}
+          onCheckedChange={onToggleSelect}
+          aria-label={`Select ${invoice.customer_name}`}
+          data-testid={`checkbox-mobile-${invoice.invoice_id}`}
+        />
+      </div>
+
+      {/* Card body — navigates to customer workspace */}
+      <div
+        className="flex-1 min-w-0 cursor-pointer"
+        onClick={handleCardClick}
+        role="link"
+        aria-label={`Open ${invoice.customer_name} customer workspace`}
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            handleCardClick();
+          }
+        }}
+        data-testid={`mobile-invoice-${invoice.invoice_id}`}
+      >
+        <div className="flex items-start justify-between gap-4">
+          <div className="min-w-0">
+            <div className="truncate font-semibold text-foreground">
+              {invoice.customer_name}
+            </div>
+            <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
+              <span className="font-mono">{invoice.invoice_id}</span>
+              <span>·</span>
+              <span>{invoice.customer_segment}</span>
+            </div>
+          </div>
+          <div className="shrink-0 text-right">
+            <div className="font-semibold">
+              {formatCurrency(invoice.invoice_amount)}
+            </div>
+            <div className="mt-1 text-xs text-muted-foreground">
+              {invoice.days_overdue}d overdue
+            </div>
+          </div>
+        </div>
+        <div className="mt-3 flex items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <RiskBadge level={invoice.risk.risk_level} />
+            <StatusBadge status={invoice.status} />
+          </div>
+          <ArrowRight className="h-4 w-4 shrink-0 text-primary" />
         </div>
       </div>
     </div>

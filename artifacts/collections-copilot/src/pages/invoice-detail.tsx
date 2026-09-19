@@ -1,7 +1,8 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useMemo } from "react";
 import { useRoute, Link, useLocation } from "wouter";
 import { 
   useGetCollectionInvoice, 
+  useGetCollectionsDashboard,
   useRegenerateCollectionDraft,
   useMarkCollectionMessageSent,
   getGetCollectionInvoiceQueryKey,
@@ -14,6 +15,11 @@ import { formatCurrency } from "@/lib/utils";
 import { Button } from "@workspace/ref-design/components/ui/button";
 import { Textarea } from "@workspace/ref-design/components/ui/textarea";
 import { Input } from "@workspace/ref-design/components/ui/input";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@workspace/ref-design/components/ui/tooltip";
 import { 
   ArrowLeft, 
   Send, 
@@ -27,10 +33,19 @@ import {
   CheckCircle2,
   RefreshCw,
   Zap,
-  ServerOff
+  ServerOff,
+  Info,
+  Users,
 } from "lucide-react";
 import { Skeleton } from "@workspace/ref-design/components/ui/skeleton";
 import { toast } from "@workspace/ref-design/hooks/use-toast";
+import { predictPayment, type PredictionConfidence } from "@/lib/finance-intelligence";
+
+const CONFIDENCE_COLORS: Record<PredictionConfidence, string> = {
+  High: "bg-primary/10 text-primary border-primary/20",
+  Medium: "bg-secondary text-secondary-foreground border-border",
+  Low: "bg-destructive/10 text-destructive border-destructive/20",
+};
 
 export default function InvoiceDetail() {
   const [, params] = useRoute("/invoices/:id");
@@ -41,6 +56,7 @@ export default function InvoiceDetail() {
   const { data: invoice, isLoading, error } = useGetCollectionInvoice(id || "", {
     query: { enabled: !!id, queryKey: getGetCollectionInvoiceQueryKey(id || "") }
   });
+  const { data: dashboard } = useGetCollectionsDashboard();
 
   const regenerate = useRegenerateCollectionDraft();
   const markSent = useMarkCollectionMessageSent();
@@ -82,6 +98,11 @@ export default function InvoiceDetail() {
     setLocation("/");
   };
 
+  const prediction = useMemo(() => {
+    if (!invoice) return null;
+    return predictPayment(invoice, dashboard?.reference_date);
+  }, [invoice, dashboard?.reference_date]);
+
   const handleRegenerate = (direction: DraftRegenerationInputDirection) => {
     if (!id) return;
     regenerate.mutate({ invoiceId: id, data: { direction } }, {
@@ -89,7 +110,6 @@ export default function InvoiceDetail() {
         setSubject(result.subject);
         setMessage(result.message);
         toast({ title: `Draft regenerated with ${direction} tone` });
-        // We patch the local cache so we don't trigger a full refetch that would overwrite the user's focus
         queryClient.setQueryData(getGetCollectionInvoiceQueryKey(id), (old: any) => 
           old ? { ...old, draft: result } : old
         );
@@ -107,13 +127,12 @@ export default function InvoiceDetail() {
       data: { 
         subject, 
         message,
-        tone_used: invoice.draft.tone_used as SendMessageInputToneUsed // Best effort mapping
+        tone_used: invoice.draft.tone_used as SendMessageInputToneUsed
       } 
     }, {
       onSuccess: (updatedInvoice) => {
         toast({ title: "Message sent successfully" });
         queryClient.setQueryData(getGetCollectionInvoiceQueryKey(id), updatedInvoice);
-        // Navigate back after a short delay
         setTimeout(() => setLocation("/"), 1500);
       },
       onError: () => {
@@ -125,6 +144,12 @@ export default function InvoiceDetail() {
   if (!id) return <div>Invalid ID</div>;
   if (error) return <div className="p-8 text-destructive">Failed to load invoice.</div>;
 
+  const dateFormatter = new Intl.DateTimeFormat("en-IN", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+
   return (
     <div className="flex flex-col h-full bg-background relative">
       {/* Header */}
@@ -133,17 +158,31 @@ export default function InvoiceDetail() {
           <Button variant="ghost" size="icon" onClick={handleBackNavigation} className="h-8 w-8 text-muted-foreground hover:text-foreground">
             <ArrowLeft className="h-4 w-4" />
           </Button>
-          <div className="h-6 w-[1px] bg-border mx-2"></div>
+          <div className="h-6 w-[1px] bg-border mx-2" />
           {isLoading ? (
             <Skeleton className="h-6 w-48" />
           ) : invoice ? (
-            <div className="flex items-center gap-3">
-              <h1 className="text-lg font-bold">{invoice.customer_name}</h1>
+            <div className="flex items-center gap-3 flex-wrap">
+              <Link
+                href={`/customers/${invoice.invoice_id}`}
+                className="text-lg font-bold hover:text-primary hover:underline underline-offset-2 transition-colors"
+                data-testid="link-customer-name"
+              >
+                {invoice.customer_name}
+              </Link>
               <span className="text-muted-foreground text-sm font-mono">{invoice.invoice_id}</span>
               <StatusBadge status={invoice.status} />
             </div>
           ) : null}
         </div>
+        {invoice && (
+          <Link href={`/customers/${invoice.invoice_id}`}>
+            <Button variant="outline" size="sm" className="gap-1.5 hidden sm:inline-flex">
+              <Users className="w-3.5 h-3.5" />
+              Customer Profile
+            </Button>
+          </Link>
+        )}
       </header>
 
       {/* Main Content Split */}
@@ -179,7 +218,7 @@ export default function InvoiceDetail() {
                 <div className="grid grid-cols-2 gap-y-4 gap-x-4 text-sm">
                   <div>
                     <div className="text-muted-foreground flex items-center gap-1.5 mb-1"><Calendar className="w-3.5 h-3.5" /> Due Date</div>
-                    <div className="font-medium">{new Date(invoice.due_date).toLocaleDateString()}</div>
+                    <div className="font-medium">{dateFormatter.format(new Date(invoice.due_date))}</div>
                   </div>
                   <div>
                     <div className="text-muted-foreground flex items-center gap-1.5 mb-1"><Building className="w-3.5 h-3.5" /> Segment</div>
@@ -195,6 +234,38 @@ export default function InvoiceDetail() {
                   </div>
                 </div>
               </div>
+
+              {/* Payment Prediction */}
+              {prediction && (
+                <div className="bg-card border border-border rounded-xl p-5 shadow-sm">
+                  <div className="flex items-center gap-2 mb-4">
+                    <h3 className="font-semibold text-base">Payment Prediction</h3>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <button aria-label="How is payment predicted?" className="text-muted-foreground hover:text-foreground transition-colors">
+                          <Info className="w-3.5 h-3.5" />
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent className="max-w-xs text-xs leading-relaxed">
+                        <p className="font-semibold mb-1">How this is calculated</p>
+                        <p>Derived deterministically from days overdue, payment terms, reminder count, payment history, risk score, and relationship length. No random values used.</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </div>
+                  <div className="text-2xl font-bold text-foreground mb-1" data-testid="detail-predicted-date">
+                    {dateFormatter.format(prediction.predictedDate)}
+                  </div>
+                  <div className="text-sm text-muted-foreground mb-3">
+                    Estimated collection in ~{prediction.daysFromNow} days
+                  </div>
+                  <div className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full border ${CONFIDENCE_COLORS[prediction.confidence]}`} data-testid="detail-prediction-confidence">
+                    {prediction.confidence} Confidence
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-3 leading-relaxed">
+                    {prediction.explanation}
+                  </p>
+                </div>
+              )}
 
               {/* Risk Assessment */}
               <div className="bg-card border border-border rounded-xl p-5 shadow-sm relative overflow-hidden group">
@@ -219,8 +290,8 @@ export default function InvoiceDetail() {
                       <div 
                         className={`h-full rounded-full ${
                           invoice.risk.risk_score > 75 ? 'bg-destructive' : 
-                          invoice.risk.risk_score > 50 ? 'bg-amber-500' : 
-                          invoice.risk.risk_score > 25 ? 'bg-blue-500' : 'bg-emerald-500'
+                          invoice.risk.risk_score > 50 ? 'bg-primary' : 
+                          invoice.risk.risk_score > 25 ? 'bg-muted-foreground' : 'bg-secondary-foreground'
                         }`}
                         style={{ width: `${invoice.risk.risk_score}%` }}
                       />
@@ -239,7 +310,12 @@ export default function InvoiceDetail() {
               
               {/* Additional Context */}
               <div className="text-sm space-y-3">
-                <h4 className="font-semibold text-foreground uppercase tracking-wider text-xs">Relationship Context</h4>
+                <div className="flex items-center justify-between">
+                  <h4 className="font-semibold text-foreground uppercase tracking-wider text-xs">Relationship Context</h4>
+                  <Link href={`/customers/${invoice.invoice_id}`} className="text-xs text-primary hover:underline underline-offset-2 transition-colors">
+                    View full profile
+                  </Link>
+                </div>
                 <div className="flex justify-between py-2 border-b border-border/50">
                   <span className="text-muted-foreground">Annual Volume</span>
                   <span className="font-medium">{formatCurrency(invoice.annual_volume)}</span>
@@ -295,7 +371,14 @@ export default function InvoiceDetail() {
                     <div>
                       <h2 className="text-2xl font-bold tracking-tight">Draft Message</h2>
                       <p className="text-muted-foreground text-sm mt-1">
-                        To: {invoice.contact_person} ({invoice.customer_name})
+                        To: {invoice.contact_person} (
+                        <Link
+                          href={`/customers/${invoice.invoice_id}`}
+                          className="text-primary hover:underline underline-offset-2 transition-colors"
+                        >
+                          {invoice.customer_name}
+                        </Link>
+                        )
                       </p>
                     </div>
                     <div className="flex items-center gap-2 bg-secondary px-3 py-1.5 rounded-full text-xs font-medium border border-border">
