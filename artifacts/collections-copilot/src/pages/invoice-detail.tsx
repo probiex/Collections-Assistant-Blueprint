@@ -11,9 +11,9 @@ import {
 import { useQueryClient } from "@tanstack/react-query";
 import { RiskBadge, StatusBadge } from "@/components/status-badges";
 import { formatCurrency } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
+import { Button } from "@workspace/ref-design/components/ui/button";
+import { Textarea } from "@workspace/ref-design/components/ui/textarea";
+import { Input } from "@workspace/ref-design/components/ui/input";
 import { 
   ArrowLeft, 
   Send, 
@@ -29,7 +29,7 @@ import {
   Zap,
   ServerOff
 } from "lucide-react";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Skeleton } from "@workspace/ref-design/components/ui/skeleton";
 import { toast } from "sonner";
 
 export default function InvoiceDetail() {

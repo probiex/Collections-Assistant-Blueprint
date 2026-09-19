@@ -1,7 +1,7 @@
 import { ReactNode, useState } from "react";
 import { Link, useLocation } from "wouter";
 import { Search, Bell, Settings, ArrowRight, LayoutDashboard, CreditCard, Activity, Command, Menu, X } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@workspace/ref-design/components/ui/button";
 
 interface LayoutProps {
   children: ReactNode;
@@ -29,10 +29,10 @@ export function Layout({ children }: LayoutProps) {
       {mobileMenuOpen && (
         <div className="fixed inset-0 z-50 flex md:hidden">
           <div className="fixed inset-0 bg-background/80 backdrop-blur-sm" onClick={() => setMobileMenuOpen(false)} />
-          <div className="relative w-64 max-w-[80%] bg-sidebar border-r border-border shadow-2xl h-full flex flex-col animate-in slide-in-from-left duration-300">
-            <div className="h-16 flex items-center justify-between px-6 border-b border-border">
-              <div className="flex items-center gap-2 text-primary font-bold text-lg tracking-tight">
-                <Command className="w-5 h-5 text-accent" />
+          <div className="relative w-64 max-w-[80%] bg-sidebar text-sidebar-foreground border-r border-sidebar-border shadow-2xl h-full flex flex-col animate-in slide-in-from-left duration-300">
+            <div className="h-16 flex items-center justify-between px-6 border-b border-sidebar-border">
+              <div className="flex items-center gap-2 font-serif font-medium text-lg tracking-tight">
+                <Command className="w-5 h-5 text-sidebar-primary" />
                 <span>Copilot</span>
               </div>
               <Button variant="ghost" size="icon" onClick={() => setMobileMenuOpen(false)} className="-mr-2 text-muted-foreground">
@@ -41,7 +41,7 @@ export function Layout({ children }: LayoutProps) {
             </div>
             
             <div className="p-4 flex-1 overflow-y-auto">
-              <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 px-2">
+              <div className="text-xs font-semibold text-sidebar-foreground/60 uppercase tracking-[0.18em] mb-3 px-2">
                 Workspace
               </div>
               <nav className="space-y-1">
@@ -49,7 +49,7 @@ export function Layout({ children }: LayoutProps) {
                   const Icon = link.icon;
                   const active = isActive(link.href);
                   return (
-                    <Link key={link.href} href={link.href} onClick={() => setMobileMenuOpen(false)} className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${active ? 'bg-primary/5 text-primary' : 'text-muted-foreground hover:bg-secondary hover:text-foreground'}`} data-testid={link.testId}>
+                    <Link key={link.href} href={link.href} onClick={() => setMobileMenuOpen(false)} className={`flex items-center gap-3 px-3 py-2.5 rounded-full text-sm font-medium transition-colors ${active ? 'bg-sidebar-primary text-sidebar-primary-foreground' : 'text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'}`} data-testid={link.testId}>
                       <Icon className="w-4 h-4" />
                       {link.label}
                     </Link>
@@ -58,14 +58,14 @@ export function Layout({ children }: LayoutProps) {
               </nav>
             </div>
             
-            <div className="p-4 border-t border-border">
+            <div className="p-4 border-t border-sidebar-border">
               <div className="flex items-center gap-3 px-3 py-2">
-                <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold text-xs">
+                <div className="w-8 h-8 rounded-full bg-sidebar-primary text-sidebar-primary-foreground flex items-center justify-center font-bold text-xs">
                   FT
                 </div>
                 <div className="flex flex-col">
                   <span className="text-sm font-medium leading-none">Finance Team</span>
-                  <span className="text-xs text-muted-foreground mt-1">Admin</span>
+                  <span className="text-xs text-sidebar-foreground/60 mt-1">Admin</span>
                 </div>
               </div>
             </div>
@@ -74,16 +74,16 @@ export function Layout({ children }: LayoutProps) {
       )}
 
       {/* Sidebar (Desktop) */}
-      <aside className="w-64 border-r border-border bg-sidebar flex-shrink-0 flex-col hidden md:flex">
-        <div className="h-16 flex items-center px-6 border-b border-border">
-          <div className="flex items-center gap-2 text-primary font-bold text-lg tracking-tight">
-            <Command className="w-5 h-5 text-accent" />
+      <aside className="w-64 border-r border-sidebar-border bg-sidebar text-sidebar-foreground flex-shrink-0 flex-col hidden md:flex">
+        <div className="h-16 flex items-center px-6 border-b border-sidebar-border">
+          <div className="flex items-center gap-2 font-serif font-medium text-lg tracking-tight">
+            <Command className="w-5 h-5 text-sidebar-primary" />
             <span>Copilot</span>
           </div>
         </div>
         
         <div className="p-4 flex-1 overflow-y-auto">
-          <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 px-2">
+          <div className="text-xs font-semibold text-sidebar-foreground/60 uppercase tracking-[0.18em] mb-3 px-2">
             Workspace
           </div>
           <nav className="space-y-1">
@@ -91,7 +91,7 @@ export function Layout({ children }: LayoutProps) {
               const Icon = link.icon;
               const active = isActive(link.href);
               return (
-                <Link key={link.href} href={link.href} className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${active ? 'bg-primary/5 text-primary' : 'text-muted-foreground hover:bg-secondary hover:text-foreground'}`} data-testid={link.testId}>
+                <Link key={link.href} href={link.href} className={`flex items-center gap-3 px-3 py-2.5 rounded-full text-sm font-medium transition-colors ${active ? 'bg-sidebar-primary text-sidebar-primary-foreground' : 'text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'}`} data-testid={link.testId}>
                   <Icon className="w-4 h-4" />
                   {link.label}
                 </Link>
@@ -100,14 +100,14 @@ export function Layout({ children }: LayoutProps) {
           </nav>
         </div>
         
-        <div className="p-4 border-t border-border">
+        <div className="p-4 border-t border-sidebar-border">
           <div className="flex items-center gap-3 px-3 py-2">
-            <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold text-xs">
+            <div className="w-8 h-8 rounded-full bg-sidebar-primary text-sidebar-primary-foreground flex items-center justify-center font-bold text-xs">
               FT
             </div>
             <div className="flex flex-col">
               <span className="text-sm font-medium leading-none">Finance Team</span>
-              <span className="text-xs text-muted-foreground mt-1">Admin</span>
+              <span className="text-xs text-sidebar-foreground/60 mt-1">Admin</span>
             </div>
           </div>
         </div>
@@ -115,14 +115,14 @@ export function Layout({ children }: LayoutProps) {
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col min-w-0 bg-background overflow-hidden relative">
-        <header className="h-16 border-b border-border bg-background flex items-center justify-between px-6 flex-shrink-0 z-10 relative">
+        <header className="h-16 border-b border-border bg-background/90 backdrop-blur flex items-center justify-between px-6 flex-shrink-0 z-10 relative">
           <div className="flex items-center flex-1">
             <div className="relative w-full max-w-md hidden md:block">
               <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
               <input 
                 type="text" 
                 placeholder="Search invoices, customers, or amounts..." 
-                className="w-full pl-9 pr-4 py-2 bg-secondary/50 border border-transparent rounded-md text-sm focus:outline-none focus:border-border focus:ring-1 focus:ring-ring transition-all"
+                className="w-full pl-9 pr-4 py-2 bg-card border border-border rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-ring/40 transition-all"
                 data-testid="global-search"
               />
             </div>
@@ -130,8 +130,8 @@ export function Layout({ children }: LayoutProps) {
               <Button variant="ghost" size="icon" onClick={() => setMobileMenuOpen(true)} className="-ml-2 text-muted-foreground">
                 <Menu className="w-5 h-5" />
               </Button>
-              <div className="font-bold flex items-center gap-2">
-                 <Command className="w-5 h-5 text-accent" />
+               <div className="font-serif font-medium flex items-center gap-2">
+                  <Command className="w-5 h-5 text-primary" />
                  Copilot
               </div>
             </div>
@@ -153,9 +153,9 @@ export function Layout({ children }: LayoutProps) {
   );
 }
 
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@workspace/ref-design/components/ui/dialog";
+import { Label } from "@workspace/ref-design/components/ui/label";
+import { Switch } from "@workspace/ref-design/components/ui/switch";
 import { useGetCollectionSettings, getGetCollectionSettingsQueryKey, useUpdateCollectionSettings } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Loader2, Zap, ServerOff } from "lucide-react";

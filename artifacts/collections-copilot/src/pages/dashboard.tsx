@@ -22,10 +22,10 @@ import {
 } from "lucide-react";
 import { formatCurrency, formatNumber } from "@/lib/utils";
 import { RiskBadge, StatusBadge } from "@/components/status-badges";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Button } from "@workspace/ref-design/components/ui/button";
+import { Input } from "@workspace/ref-design/components/ui/input";
 import { useState, useMemo } from "react";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Skeleton } from "@workspace/ref-design/components/ui/skeleton";
 
 export default function Dashboard() {
   const { data: dashboard, isLoading: isLoadingDash } = useGetCollectionsDashboard();
@@ -65,7 +65,7 @@ export default function Dashboard() {
     <div className="p-6 md:p-8 max-w-[1600px] mx-auto space-y-8 animate-in fade-in duration-500">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">Portfolio Overview</h1>
+          <h1 className="font-serif text-3xl font-medium tracking-tight text-foreground">Portfolio Overview</h1>
           <p className="text-muted-foreground mt-1">Command center for overdue receivables.</p>
         </div>
         

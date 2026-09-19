@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { useGetCollectionsDashboard, useGetCollectionSettings, RiskResultRiskLevel, DashboardEngineSource } from "@workspace/api-client-react";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Skeleton } from "@workspace/ref-design/components/ui/skeleton";
 import { Zap, ServerOff, Info, Activity, GitCommit, Settings2, BarChart2 } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import { RiskBadge } from "@/components/status-badges";

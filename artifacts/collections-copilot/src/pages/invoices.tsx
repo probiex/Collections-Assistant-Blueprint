@@ -8,9 +8,9 @@ import {
   InvoiceCustomerSegment 
 } from "@workspace/api-client-react";
 import { Search, ArrowRight, X, Calendar, ShieldAlert, Building, ArrowUp, ArrowDown } from "lucide-react";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Input } from "@workspace/ref-design/components/ui/input";
+import { Button } from "@workspace/ref-design/components/ui/button";
+import { Skeleton } from "@workspace/ref-design/components/ui/skeleton";
 import { RiskBadge, StatusBadge } from "@/components/status-badges";
 import { formatCurrency } from "@/lib/utils";
 
@@ -92,7 +92,7 @@ export default function Invoices() {
     <div className="p-6 md:p-8 max-w-[1600px] mx-auto space-y-8 animate-in fade-in duration-500">
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">Invoices</h1>
+          <h1 className="font-serif text-3xl font-medium tracking-tight text-foreground">Invoices</h1>
           <p className="text-muted-foreground mt-1">Detailed portfolio view and collections workflow.</p>
         </div>
         <div className="flex flex-col items-end gap-2">
@@ -117,15 +117,15 @@ export default function Invoices() {
               />
             </div>
             <div className="flex flex-wrap items-center gap-2">
-              <select value={riskFilter} onChange={(e) => setRiskFilter(e.target.value)} className="h-10 rounded-md border border-input bg-background px-3 text-sm focus:ring-2 focus:ring-ring focus:outline-none min-w-[120px]" data-testid="select-invoices-risk">
+              <select value={riskFilter} onChange={(e) => setRiskFilter(e.target.value)} className="h-10 rounded-full border border-input bg-background px-4 text-sm focus:ring-2 focus:ring-ring focus:outline-none min-w-[120px]" data-testid="select-invoices-risk">
                 <option value="All">All Risks</option>
                 {Object.values(RiskResultRiskLevel).map(r => <option key={r} value={r}>{r} Risk</option>)}
               </select>
-              <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="h-10 rounded-md border border-input bg-background px-3 text-sm focus:ring-2 focus:ring-ring focus:outline-none min-w-[120px]" data-testid="select-invoices-status">
+              <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="h-10 rounded-full border border-input bg-background px-4 text-sm focus:ring-2 focus:ring-ring focus:outline-none min-w-[120px]" data-testid="select-invoices-status">
                 <option value="All">All Statuses</option>
                 {Object.values(InvoiceStatus).map(s => <option key={s} value={s}>{s}</option>)}
               </select>
-              <select value={segmentFilter} onChange={(e) => setSegmentFilter(e.target.value)} className="h-10 rounded-md border border-input bg-background px-3 text-sm focus:ring-2 focus:ring-ring focus:outline-none min-w-[120px]" data-testid="select-invoices-segment">
+              <select value={segmentFilter} onChange={(e) => setSegmentFilter(e.target.value)} className="h-10 rounded-full border border-input bg-background px-4 text-sm focus:ring-2 focus:ring-ring focus:outline-none min-w-[120px]" data-testid="select-invoices-segment">
                 <option value="All">All Segments</option>
                 {Object.values(InvoiceCustomerSegment).map(s => <option key={s} value={s}>{s}</option>)}
               </select>
@@ -167,8 +167,56 @@ export default function Invoices() {
           )}
         </div>
         
-        {/* Data Table */}
-        <div className="overflow-x-auto min-h-[400px]">
+        {/* Mobile invoice cards */}
+        <div className="divide-y divide-border md:hidden">
+          {isLoading ? (
+            Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="space-y-3 p-5">
+                <Skeleton className="h-5 w-48" />
+                <Skeleton className="h-4 w-32" />
+                <Skeleton className="h-9 w-full" />
+              </div>
+            ))
+          ) : filteredInvoices.length === 0 ? (
+            <div className="p-10 text-center text-sm text-muted-foreground">
+              No invoices match these filters.
+            </div>
+          ) : (
+            filteredInvoices.map((invoice: Invoice) => (
+              <Link
+                key={invoice.invoice_id}
+                href={`/invoices/${invoice.invoice_id}`}
+                className="block p-5 transition-colors hover:bg-secondary/40"
+                data-testid={`mobile-invoice-${invoice.invoice_id}`}
+              >
+                <div className="flex items-start justify-between gap-4">
+                  <div className="min-w-0">
+                    <div className="truncate font-semibold text-foreground">{invoice.customer_name}</div>
+                    <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
+                      <span className="font-mono">{invoice.invoice_id}</span>
+                      <span>·</span>
+                      <span>{invoice.customer_segment}</span>
+                    </div>
+                  </div>
+                  <div className="shrink-0 text-right">
+                    <div className="font-semibold">{formatCurrency(invoice.invoice_amount)}</div>
+                    <div className="mt-1 text-xs text-muted-foreground">{invoice.days_overdue}d overdue</div>
+                  </div>
+                </div>
+                <div className="mt-4 flex items-center justify-between gap-3">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <RiskBadge level={invoice.risk.risk_level} />
+                    <StatusBadge status={invoice.status} />
+                  </div>
+                  <ArrowRight className="h-4 w-4 shrink-0 text-primary" />
+                </div>
+              </Link>
+            ))
+          )}
+        </div>
+
+        {/* Desktop data table */}
+        <div className="hidden overflow-x-auto min-h-[400px] md:block">
           <table className="w-full text-sm text-left whitespace-nowrap">
             <thead className="text-xs text-muted-foreground uppercase bg-background border-b border-border sticky top-0 z-10 shadow-sm">
               <tr>

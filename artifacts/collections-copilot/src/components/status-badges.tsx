@@ -1,4 +1,3 @@
-import { Badge } from "@/components/ui/badge";
 import { RiskResultRiskLevel, InvoiceStatus } from "@workspace/api-client-react";
 import { cva, type VariantProps } from "class-variance-authority";
 
