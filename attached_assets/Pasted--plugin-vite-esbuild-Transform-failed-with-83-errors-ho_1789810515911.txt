@@ -1,0 +1,683 @@
+[plugin:vite:esbuild] Transform failed with 83 errors:
+/home/runner/workspace/artifacts/collections-copilot/src/lib/finance-intelligence.ts:365:16: ERROR: Multiple exports with the same name "parsePaymentTermsDays"
+/home/runner/workspace/artifacts/collections-copilot/src/lib/finance-intelligence.ts:380:16: ERROR: Multiple exports with the same name "calculateDSO"
+/home/runner/workspace/artifacts/collections-copilot/src/lib/finance-intelligence.ts:404:16: ERROR: Multiple exports with the same name "calculatePriorPeriodDSO"
+/home/runner/workspace/artifacts/collections-copilot/src/lib/finance-intelligence.ts:430:13: ERROR: Multiple exports with the same name "AGING_BUCKET_DEFS"
+/home/runner/workspace/artifacts/collections-copilot/src/lib/finance-intelligence.ts:430:13: ERROR: The symbol "AGING_BUCKET_DEFS" has already been declared
+...
+/home/runner/workspace/artifacts/collections-copilot/src/lib/finance-intelligence.ts:365:16
+Multiple exports with the same name "parsePaymentTermsDays"
+363 |   * Falls back to 30 if unparseable.
+364 |   */
+365 |  export function parsePaymentTermsDays(terms: string): number {
+    |                  ^
+366 |    if (!terms) return 30;
+367 |    const match = terms.match(/\d+/);
+
+Multiple exports with the same name "calculateDSO"
+378 |   * This represents the total days from invoice date to (expected) collection.
+379 |   */
+380 |  export function calculateDSO(invoices: Invoice[]): number {
+    |                  ^
+381 |    if (!invoices || invoices.length === 0) return 0;
+382 |  
+
+Multiple exports with the same name "calculatePriorPeriodDSO"
+402 |   * Stable across renders; does not use random numbers.
+403 |   */
+404 |  export function calculatePriorPeriodDSO(invoices: Invoice[]): number {
+    |                  ^
+405 |    if (!invoices || invoices.length === 0) return 0;
+406 |  
+
+Multiple exports with the same name "AGING_BUCKET_DEFS"
+428 |  }
+429 |  
+430 |  export const AGING_BUCKET_DEFS = [
+    |               ^
+431 |    { label: "0–30 days", minDays: 0, maxDays: 30 },
+432 |    { label: "31–60 days", minDays: 31, maxDays: 60 },
+
+The symbol "AGING_BUCKET_DEFS" has already been declared
+428 |  }
+429 |  
+430 |  export const AGING_BUCKET_DEFS = [
+    |               ^
+431 |    { label: "0–30 days", minDays: 0, maxDays: 30 },
+432 |    { label: "31–60 days", minDays: 31, maxDays: 60 },
+
+Multiple exports with the same name "calculateAgingBuckets"
+435 |  ] as const;
+436 |  
+437 |  export function calculateAgingBuckets(invoices: Invoice[]): AgingBucket[] {
+    |                  ^
+438 |    const buckets: AgingBucket[] = AGING_BUCKET_DEFS.map((def) => ({
+439 |      ...def,
+
+Multiple exports with the same name "predictPayment"
+482 |   * 6. Confidence = High when risk_score < 30, Medium when < 60, Low otherwise.
+483 |   */
+484 |  export function predictPayment(
+    |                  ^
+485 |    invoice: Invoice,
+486 |    referenceDate?: string
+
+Multiple exports with the same name "buildCustomerContext"
+548 |  }
+549 |  
+550 |  export function buildCustomerContext(invoice: Invoice): CustomerContext {
+    |                  ^
+551 |    const years = invoice.relationship_years;
+552 |    const relationshipDurationLabel =
+
+Multiple exports with the same name "buildCustomerTimeline"
+583 |   * Historical demo events are deterministic (derived from invoice data, not random).
+584 |   */
+585 |  export function buildCustomerTimeline(
+    |                  ^
+586 |    invoice: Invoice,
+587 |    messageHistory: Array<{
+
+Multiple exports with the same name "parsePaymentTermsDays"
+697 |   * Falls back to 30 if unparseable.
+698 |   */
+699 |  export function parsePaymentTermsDays(terms: string): number {
+    |                  ^
+700 |    if (!terms) return 30;
+701 |    const match = terms.match(/\d+/);
+
+Multiple exports with the same name "calculateDSO"
+712 |   * This represents the total days from invoice date to (expected) collection.
+713 |   */
+714 |  export function calculateDSO(invoices: Invoice[]): number {
+    |                  ^
+715 |    if (!invoices || invoices.length === 0) return 0;
+716 |  
+
+Multiple exports with the same name "calculatePriorPeriodDSO"
+736 |   * Stable across renders; does not use random numbers.
+737 |   */
+738 |  export function calculatePriorPeriodDSO(invoices: Invoice[]): number {
+    |                  ^
+739 |    if (!invoices || invoices.length === 0) return 0;
+740 |  
+
+Multiple exports with the same name "AGING_BUCKET_DEFS"
+762 |  }
+763 |  
+764 |  export const AGING_BUCKET_DEFS = [
+    |               ^
+765 |    { label: "0–30 days", minDays: 0, maxDays: 30 },
+766 |    { label: "31–60 days", minDays: 31, maxDays: 60 },
+
+The symbol "AGING_BUCKET_DEFS" has already been declared
+762 |  }
+763 |  
+764 |  export const AGING_BUCKET_DEFS = [
+    |               ^
+765 |    { label: "0–30 days", minDays: 0, maxDays: 30 },
+766 |    { label: "31–60 days", minDays: 31, maxDays: 60 },
+
+Multiple exports with the same name "calculateAgingBuckets"
+769 |  ] as const;
+770 |  
+771 |  export function calculateAgingBuckets(invoices: Invoice[]): AgingBucket[] {
+    |                  ^
+772 |    const buckets: AgingBucket[] = AGING_BUCKET_DEFS.map((def) => ({
+773 |      ...def,
+
+Multiple exports with the same name "predictPayment"
+816 |   * 6. Confidence = High when risk_score < 30, Medium when < 60, Low otherwise.
+817 |   */
+818 |  export function predictPayment(
+    |                  ^
+819 |    invoice: Invoice,
+820 |    referenceDate?: string
+
+Multiple exports with the same name "buildCustomerContext"
+894 |  }
+895 |  
+896 |  export function buildCustomerContext(invoice: Invoice): CustomerContext {
+    |                  ^
+897 |    const years = invoice.relationship_years;
+898 |    const relationshipDurationLabel =
+
+Multiple exports with the same name "buildCustomerTimeline"
+929 |   * Historical demo events are deterministic (derived from invoice data, not random).
+930 |   */
+931 |  export function buildCustomerTimeline(
+    |                  ^
+932 |    invoice: Invoice,
+933 |    messageHistory: Array<{
+
+Multiple exports with the same name "parsePaymentTermsDays"
+1043 |   * Falls back to 30 if unparseable.
+1044 |   */
+1045 |  export function parsePaymentTermsDays(terms: string): number {
+     |                  ^
+1046 |    if (!terms) return 30;
+1047 |    const match = terms.match(/\d+/);
+
+Multiple exports with the same name "calculateDSO"
+1058 |   * This represents the total days from invoice date to (expected) collection.
+1059 |   */
+1060 |  export function calculateDSO(invoices: Invoice[]): number {
+     |                  ^
+1061 |    if (!invoices || invoices.length === 0) return 0;
+1062 |  
+
+Multiple exports with the same name "calculatePriorPeriodDSO"
+1082 |   * Stable across renders; does not use random numbers.
+1083 |   */
+1084 |  export function calculatePriorPeriodDSO(invoices: Invoice[]): number {
+     |                  ^
+1085 |    if (!invoices || invoices.length === 0) return 0;
+1086 |  
+
+Multiple exports with the same name "AGING_BUCKET_DEFS"
+1108 |  }
+1109 |  
+1110 |  export const AGING_BUCKET_DEFS = [
+     |               ^
+1111 |    { label: "0–30 days", minDays: 0, maxDays: 30 },
+1112 |    { label: "31–60 days", minDays: 31, maxDays: 60 },
+
+The symbol "AGING_BUCKET_DEFS" has already been declared
+1108 |  }
+1109 |  
+1110 |  export const AGING_BUCKET_DEFS = [
+     |               ^
+1111 |    { label: "0–30 days", minDays: 0, maxDays: 30 },
+1112 |    { label: "31–60 days", minDays: 31, maxDays: 60 },
+
+Multiple exports with the same name "calculateAgingBuckets"
+1115 |  ] as const;
+1116 |  
+1117 |  export function calculateAgingBuckets(invoices: Invoice[]): AgingBucket[] {
+     |                  ^
+1118 |    const buckets: AgingBucket[] = AGING_BUCKET_DEFS.map((def) => ({
+1119 |      ...def,
+
+Multiple exports with the same name "predictPayment"
+1162 |   * 6. Confidence = High when risk_score < 30, Medium when < 60, Low otherwise.
+1163 |   */
+1164 |  export function predictPayment(
+     |                  ^
+1165 |    invoice: Invoice,
+1166 |    referenceDate?: string
+
+Multiple exports with the same name "buildCustomerContext"
+1228 |  }
+1229 |  
+1230 |  export function buildCustomerContext(invoice: Invoice): CustomerContext {
+     |                  ^
+1231 |    const years = invoice.relationship_years;
+1232 |    const relationshipDurationLabel =
+
+Multiple exports with the same name "buildCustomerTimeline"
+1263 |   * Historical demo events are deterministic (derived from invoice data, not random).
+1264 |   */
+1265 |  export function buildCustomerTimeline(
+     |                  ^
+1266 |    invoice: Invoice,
+1267 |    messageHistory: Array<{
+
+Multiple exports with the same name "parsePaymentTermsDays"
+1377 |   * Falls back to 30 if unparseable.
+1378 |   */
+1379 |  export function parsePaymentTermsDays(terms: string): number {
+     |                  ^
+1380 |    if (!terms) return 30;
+1381 |    const match = terms.match(/\d+/);
+
+Multiple exports with the same name "calculateDSO"
+1392 |   * This represents the total days from invoice date to (expected) collection.
+1393 |   */
+1394 |  export function calculateDSO(invoices: Invoice[]): number {
+     |                  ^
+1395 |    if (!invoices || invoices.length === 0) return 0;
+1396 |  
+
+Multiple exports with the same name "calculatePriorPeriodDSO"
+1416 |   * Stable across renders; does not use random numbers.
+1417 |   */
+1418 |  export function calculatePriorPeriodDSO(invoices: Invoice[]): number {
+     |                  ^
+1419 |    if (!invoices || invoices.length === 0) return 0;
+1420 |  
+
+Multiple exports with the same name "AGING_BUCKET_DEFS"
+1442 |  }
+1443 |  
+1444 |  export const AGING_BUCKET_DEFS = [
+     |               ^
+1445 |    { label: "0–30 days", minDays: 0, maxDays: 30 },
+1446 |    { label: "31–60 days", minDays: 31, maxDays: 60 },
+
+The symbol "AGING_BUCKET_DEFS" has already been declared
+1442 |  }
+1443 |  
+1444 |  export const AGING_BUCKET_DEFS = [
+     |               ^
+1445 |    { label: "0–30 days", minDays: 0, maxDays: 30 },
+1446 |    { label: "31–60 days", minDays: 31, maxDays: 60 },
+
+Multiple exports with the same name "calculateAgingBuckets"
+1449 |  ] as const;
+1450 |  
+1451 |  export function calculateAgingBuckets(invoices: Invoice[]): AgingBucket[] {
+     |                  ^
+1452 |    const buckets: AgingBucket[] = AGING_BUCKET_DEFS.map((def) => ({
+1453 |      ...def,
+
+Multiple exports with the same name "predictPayment"
+1496 |   * 6. Confidence = High when risk_score < 30, Medium when < 60, Low otherwise.
+1497 |   */
+1498 |  export function predictPayment(
+     |                  ^
+1499 |    invoice: Invoice,
+1500 |    referenceDate?: string
+
+Multiple exports with the same name "buildCustomerContext"
+1574 |  }
+1575 |  
+1576 |  export function buildCustomerContext(invoice: Invoice): CustomerContext {
+     |                  ^
+1577 |    const years = invoice.relationship_years;
+1578 |    const relationshipDurationLabel =
+
+Multiple exports with the same name "buildCustomerTimeline"
+1609 |   * Historical demo events are deterministic (derived from invoice data, not random).
+1610 |   */
+1611 |  export function buildCustomerTimeline(
+     |                  ^
+1612 |    invoice: Invoice,
+1613 |    messageHistory: Array<{
+
+Multiple exports with the same name "parsePaymentTermsDays"
+1723 |   * Falls back to 30 if unparseable.
+1724 |   */
+1725 |  export function parsePaymentTermsDays(terms: string): number {
+     |                  ^
+1726 |    if (!terms) return 30;
+1727 |    const match = terms.match(/\d+/);
+
+The symbol "parsePaymentTermsDays" has already been declared
+1723 |   * Falls back to 30 if unparseable.
+1724 |   */
+1725 |  export function parsePaymentTermsDays(terms: string): number {
+     |                  ^
+1726 |    if (!terms) return 30;
+1727 |    const match = terms.match(/\d+/);
+
+The symbol "parsePaymentTermsDays" has already been declared
+1723 |   * Falls back to 30 if unparseable.
+1724 |   */
+1725 |  export function parsePaymentTermsDays(terms: string): number {
+     |                  ^
+1726 |    if (!terms) return 30;
+1727 |    const match = terms.match(/\d+/);
+
+The symbol "parsePaymentTermsDays" has already been declared
+1723 |   * Falls back to 30 if unparseable.
+1724 |   */
+1725 |  export function parsePaymentTermsDays(terms: string): number {
+     |                  ^
+1726 |    if (!terms) return 30;
+1727 |    const match = terms.match(/\d+/);
+
+The symbol "parsePaymentTermsDays" has already been declared
+1723 |   * Falls back to 30 if unparseable.
+1724 |   */
+1725 |  export function parsePaymentTermsDays(terms: string): number {
+     |                  ^
+1726 |    if (!terms) return 30;
+1727 |    const match = terms.match(/\d+/);
+
+The symbol "parsePaymentTermsDays" has already been declared
+1723 |   * Falls back to 30 if unparseable.
+1724 |   */
+1725 |  export function parsePaymentTermsDays(terms: string): number {
+     |                  ^
+1726 |    if (!terms) return 30;
+1727 |    const match = terms.match(/\d+/);
+
+Multiple exports with the same name "calculateDSO"
+1738 |   * This represents the total days from invoice date to (expected) collection.
+1739 |   */
+1740 |  export function calculateDSO(invoices: Invoice[]): number {
+     |                  ^
+1741 |    if (!invoices || invoices.length === 0) return 0;
+1742 |  
+
+The symbol "calculateDSO" has already been declared
+1738 |   * This represents the total days from invoice date to (expected) collection.
+1739 |   */
+1740 |  export function calculateDSO(invoices: Invoice[]): number {
+     |                  ^
+1741 |    if (!invoices || invoices.length === 0) return 0;
+1742 |  
+
+The symbol "calculateDSO" has already been declared
+1738 |   * This represents the total days from invoice date to (expected) collection.
+1739 |   */
+1740 |  export function calculateDSO(invoices: Invoice[]): number {
+     |                  ^
+1741 |    if (!invoices || invoices.length === 0) return 0;
+1742 |  
+
+The symbol "calculateDSO" has already been declared
+1738 |   * This represents the total days from invoice date to (expected) collection.
+1739 |   */
+1740 |  export function calculateDSO(invoices: Invoice[]): number {
+     |                  ^
+1741 |    if (!invoices || invoices.length === 0) return 0;
+1742 |  
+
+The symbol "calculateDSO" has already been declared
+1738 |   * This represents the total days from invoice date to (expected) collection.
+1739 |   */
+1740 |  export function calculateDSO(invoices: Invoice[]): number {
+     |                  ^
+1741 |    if (!invoices || invoices.length === 0) return 0;
+1742 |  
+
+The symbol "calculateDSO" has already been declared
+1738 |   * This represents the total days from invoice date to (expected) collection.
+1739 |   */
+1740 |  export function calculateDSO(invoices: Invoice[]): number {
+     |                  ^
+1741 |    if (!invoices || invoices.length === 0) return 0;
+1742 |  
+
+Multiple exports with the same name "calculatePriorPeriodDSO"
+1762 |   * Stable across renders; does not use random numbers.
+1763 |   */
+1764 |  export function calculatePriorPeriodDSO(invoices: Invoice[]): number {
+     |                  ^
+1765 |    if (!invoices || invoices.length === 0) return 0;
+1766 |  
+
+The symbol "calculatePriorPeriodDSO" has already been declared
+1762 |   * Stable across renders; does not use random numbers.
+1763 |   */
+1764 |  export function calculatePriorPeriodDSO(invoices: Invoice[]): number {
+     |                  ^
+1765 |    if (!invoices || invoices.length === 0) return 0;
+1766 |  
+
+The symbol "calculatePriorPeriodDSO" has already been declared
+1762 |   * Stable across renders; does not use random numbers.
+1763 |   */
+1764 |  export function calculatePriorPeriodDSO(invoices: Invoice[]): number {
+     |                  ^
+1765 |    if (!invoices || invoices.length === 0) return 0;
+1766 |  
+
+The symbol "calculatePriorPeriodDSO" has already been declared
+1762 |   * Stable across renders; does not use random numbers.
+1763 |   */
+1764 |  export function calculatePriorPeriodDSO(invoices: Invoice[]): number {
+     |                  ^
+1765 |    if (!invoices || invoices.length === 0) return 0;
+1766 |  
+
+The symbol "calculatePriorPeriodDSO" has already been declared
+1762 |   * Stable across renders; does not use random numbers.
+1763 |   */
+1764 |  export function calculatePriorPeriodDSO(invoices: Invoice[]): number {
+     |                  ^
+1765 |    if (!invoices || invoices.length === 0) return 0;
+1766 |  
+
+The symbol "calculatePriorPeriodDSO" has already been declared
+1762 |   * Stable across renders; does not use random numbers.
+1763 |   */
+1764 |  export function calculatePriorPeriodDSO(invoices: Invoice[]): number {
+     |                  ^
+1765 |    if (!invoices || invoices.length === 0) return 0;
+1766 |  
+
+Multiple exports with the same name "AGING_BUCKET_DEFS"
+1788 |  }
+1789 |  
+1790 |  export const AGING_BUCKET_DEFS = [
+     |               ^
+1791 |    { label: "0–30 days", minDays: 0, maxDays: 30 },
+1792 |    { label: "31–60 days", minDays: 31, maxDays: 60 },
+
+The symbol "AGING_BUCKET_DEFS" has already been declared
+1788 |  }
+1789 |  
+1790 |  export const AGING_BUCKET_DEFS = [
+     |               ^
+1791 |    { label: "0–30 days", minDays: 0, maxDays: 30 },
+1792 |    { label: "31–60 days", minDays: 31, maxDays: 60 },
+
+Multiple exports with the same name "calculateAgingBuckets"
+1795 |  ] as const;
+1796 |  
+1797 |  export function calculateAgingBuckets(invoices: Invoice[]): AgingBucket[] {
+     |                  ^
+1798 |    const buckets: AgingBucket[] = AGING_BUCKET_DEFS.map((def) => ({
+1799 |      ...def,
+
+The symbol "calculateAgingBuckets" has already been declared
+1795 |  ] as const;
+1796 |  
+1797 |  export function calculateAgingBuckets(invoices: Invoice[]): AgingBucket[] {
+     |                  ^
+1798 |    const buckets: AgingBucket[] = AGING_BUCKET_DEFS.map((def) => ({
+1799 |      ...def,
+
+The symbol "calculateAgingBuckets" has already been declared
+1795 |  ] as const;
+1796 |  
+1797 |  export function calculateAgingBuckets(invoices: Invoice[]): AgingBucket[] {
+     |                  ^
+1798 |    const buckets: AgingBucket[] = AGING_BUCKET_DEFS.map((def) => ({
+1799 |      ...def,
+
+The symbol "calculateAgingBuckets" has already been declared
+1795 |  ] as const;
+1796 |  
+1797 |  export function calculateAgingBuckets(invoices: Invoice[]): AgingBucket[] {
+     |                  ^
+1798 |    const buckets: AgingBucket[] = AGING_BUCKET_DEFS.map((def) => ({
+1799 |      ...def,
+
+The symbol "calculateAgingBuckets" has already been declared
+1795 |  ] as const;
+1796 |  
+1797 |  export function calculateAgingBuckets(invoices: Invoice[]): AgingBucket[] {
+     |                  ^
+1798 |    const buckets: AgingBucket[] = AGING_BUCKET_DEFS.map((def) => ({
+1799 |      ...def,
+
+The symbol "calculateAgingBuckets" has already been declared
+1795 |  ] as const;
+1796 |  
+1797 |  export function calculateAgingBuckets(invoices: Invoice[]): AgingBucket[] {
+     |                  ^
+1798 |    const buckets: AgingBucket[] = AGING_BUCKET_DEFS.map((def) => ({
+1799 |      ...def,
+
+Multiple exports with the same name "predictPayment"
+1842 |   * 6. Confidence = High when risk_score < 30, Medium when < 60, Low otherwise.
+1843 |   */
+1844 |  export function predictPayment(
+     |                  ^
+1845 |    invoice: Invoice,
+1846 |    referenceDate?: string
+
+The symbol "predictPayment" has already been declared
+1842 |   * 6. Confidence = High when risk_score < 30, Medium when < 60, Low otherwise.
+1843 |   */
+1844 |  export function predictPayment(
+     |                  ^
+1845 |    invoice: Invoice,
+1846 |    referenceDate?: string
+
+The symbol "predictPayment" has already been declared
+1842 |   * 6. Confidence = High when risk_score < 30, Medium when < 60, Low otherwise.
+1843 |   */
+1844 |  export function predictPayment(
+     |                  ^
+1845 |    invoice: Invoice,
+1846 |    referenceDate?: string
+
+The symbol "predictPayment" has already been declared
+1842 |   * 6. Confidence = High when risk_score < 30, Medium when < 60, Low otherwise.
+1843 |   */
+1844 |  export function predictPayment(
+     |                  ^
+1845 |    invoice: Invoice,
+1846 |    referenceDate?: string
+
+The symbol "predictPayment" has already been declared
+1842 |   * 6. Confidence = High when risk_score < 30, Medium when < 60, Low otherwise.
+1843 |   */
+1844 |  export function predictPayment(
+     |                  ^
+1845 |    invoice: Invoice,
+1846 |    referenceDate?: string
+
+The symbol "predictPayment" has already been declared
+1842 |   * 6. Confidence = High when risk_score < 30, Medium when < 60, Low otherwise.
+1843 |   */
+1844 |  export function predictPayment(
+     |                  ^
+1845 |    invoice: Invoice,
+1846 |    referenceDate?: string
+
+The symbol "getHistoryPenalty" has already been declared
+1901 |  }
+1902 |  
+1903 |  function getHistoryPenalty(history: string): number {
+     |           ^
+1904 |    const h = history.toLowerCase();
+1905 |    if (h.includes("chronic") || h.includes("chronic late")) return 21;
+
+The symbol "getHistoryPenalty" has already been declared
+1901 |  }
+1902 |  
+1903 |  function getHistoryPenalty(history: string): number {
+     |           ^
+1904 |    const h = history.toLowerCase();
+1905 |    if (h.includes("chronic") || h.includes("chronic late")) return 21;
+
+The symbol "getHistoryPenalty" has already been declared
+1901 |  }
+1902 |  
+1903 |  function getHistoryPenalty(history: string): number {
+     |           ^
+1904 |    const h = history.toLowerCase();
+1905 |    if (h.includes("chronic") || h.includes("chronic late")) return 21;
+
+Multiple exports with the same name "buildCustomerContext"
+1920 |  }
+1921 |  
+1922 |  export function buildCustomerContext(invoice: Invoice): CustomerContext {
+     |                  ^
+1923 |    const years = invoice.relationship_years;
+1924 |    const relationshipDurationLabel =
+
+The symbol "buildCustomerContext" has already been declared
+1920 |  }
+1921 |  
+1922 |  export function buildCustomerContext(invoice: Invoice): CustomerContext {
+     |                  ^
+1923 |    const years = invoice.relationship_years;
+1924 |    const relationshipDurationLabel =
+
+The symbol "buildCustomerContext" has already been declared
+1920 |  }
+1921 |  
+1922 |  export function buildCustomerContext(invoice: Invoice): CustomerContext {
+     |                  ^
+1923 |    const years = invoice.relationship_years;
+1924 |    const relationshipDurationLabel =
+
+The symbol "buildCustomerContext" has already been declared
+1920 |  }
+1921 |  
+1922 |  export function buildCustomerContext(invoice: Invoice): CustomerContext {
+     |                  ^
+1923 |    const years = invoice.relationship_years;
+1924 |    const relationshipDurationLabel =
+
+The symbol "buildCustomerContext" has already been declared
+1920 |  }
+1921 |  
+1922 |  export function buildCustomerContext(invoice: Invoice): CustomerContext {
+     |                  ^
+1923 |    const years = invoice.relationship_years;
+1924 |    const relationshipDurationLabel =
+
+The symbol "buildCustomerContext" has already been declared
+1920 |  }
+1921 |  
+1922 |  export function buildCustomerContext(invoice: Invoice): CustomerContext {
+     |                  ^
+1923 |    const years = invoice.relationship_years;
+1924 |    const relationshipDurationLabel =
+
+Multiple exports with the same name "buildCustomerTimeline"
+1955 |   * Historical demo events are deterministic (derived from invoice data, not random).
+1956 |   */
+1957 |  export function buildCustomerTimeline(
+     |                  ^
+1958 |    invoice: Invoice,
+1959 |    messageHistory: Array<{
+
+The symbol "buildCustomerTimeline" has already been declared
+1955 |   * Historical demo events are deterministic (derived from invoice data, not random).
+1956 |   */
+1957 |  export function buildCustomerTimeline(
+     |                  ^
+1958 |    invoice: Invoice,
+1959 |    messageHistory: Array<{
+
+The symbol "buildCustomerTimeline" has already been declared
+1955 |   * Historical demo events are deterministic (derived from invoice data, not random).
+1956 |   */
+1957 |  export function buildCustomerTimeline(
+     |                  ^
+1958 |    invoice: Invoice,
+1959 |    messageHistory: Array<{
+
+The symbol "buildCustomerTimeline" has already been declared
+1955 |   * Historical demo events are deterministic (derived from invoice data, not random).
+1956 |   */
+1957 |  export function buildCustomerTimeline(
+     |                  ^
+1958 |    invoice: Invoice,
+1959 |    messageHistory: Array<{
+
+The symbol "buildCustomerTimeline" has already been declared
+1955 |   * Historical demo events are deterministic (derived from invoice data, not random).
+1956 |   */
+1957 |  export function buildCustomerTimeline(
+     |                  ^
+1958 |    invoice: Invoice,
+1959 |    messageHistory: Array<{
+
+The symbol "buildCustomerTimeline" has already been declared
+1955 |   * Historical demo events are deterministic (derived from invoice data, not random).
+1956 |   */
+1957 |  export function buildCustomerTimeline(
+     |                  ^
+1958 |    invoice: Invoice,
+1959 |    messageHistory: Array<{
+    at failureErrorWithLog (/home/runner/workspace/node_modules/.pnpm/esbuild@0.28.2/node_modules/esbuild/lib/main.js:1752:15)
+    at /home/runner/workspace/node_modules/.pnpm/esbuild@0.28.2/node_modules/esbuild/lib/main.js:1019:50
+    at responseCallbacks.<computed> (/home/runner/workspace/node_modules/.pnpm/esbuild@0.28.2/node_modules/esbuild/lib/main.js:886:9)
+    at handleIncomingPacket (/home/runner/workspace/node_modules/.pnpm/esbuild@0.28.2/node_modules/esbuild/lib/main.js:941:12)
+    at Socket.readFromStdout (/home/runner/workspace/node_modules/.pnpm/esbuild@0.28.2/node_modules/esbuild/lib/main.js:864:7)
+    at Socket.emit (node:events:508:28)
+    at addChunk (node:internal/streams/readable:559:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+    at Readable.push (node:internal/streams/readable:390:5)
+    at Pipe.onStreamRead (node:internal/stream_base_commons:189:23)
+Click outside, press Esc key, or fix the code to dismiss.
+You can also disable this overlay by setting server.hmr.overlay to false in vite.config.ts.
