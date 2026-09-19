@@ -14,3 +14,17 @@ mtime_ms = 1789802632654
 storage_uri = "gcs://replit-rams-assets-sisko/rams/assets/repl:a2bd2407-1b2c-45c8-b031-849e3af0e244/e91d6727-c1c4-4ab0-aba8-f176f52a1966/26312263-9266-447c-b35c-0b46f8b8a7a2"
 storage_version_token = "1789802660486639"
 content_type = "text/markdown"
+
+[[outputs]]
+id = "C095d8fe9z470Otq6kdCD"
+uri = "file://docs/invoices-risk-models-implementation-plan.md"
+type = "text"
+title = "Invoices and Risk Models — Implementation Plan"
+description = "The completed implementation plan covering information architecture, page capabilities, navigation, and verification criteria."
+logical_id = "b577332e-0112-48ce-b2dd-3ee70b75a0b8"
+content_hash = "sha256:b947bd852a6ec566cca5fba86fd89e7db53f2ed08d6b8e3d1ab060d932860fba"
+size = 3025
+mtime_ms = 1789803548280
+storage_uri = "gcs://replit-rams-assets-sisko/rams/assets/repl:a2bd2407-1b2c-45c8-b031-849e3af0e244/b577332e-0112-48ce-b2dd-3ee70b75a0b8/ca676c59-8dfc-404d-81f5-0316d60a5ed3"
+storage_version_token = "1789803906517472"
+content_type = "text/markdown"

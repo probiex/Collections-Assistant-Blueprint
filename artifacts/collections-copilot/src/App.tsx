@@ -13,6 +13,8 @@ import {
 import { Layout } from '@/components/layout';
 import Dashboard from '@/pages/dashboard';
 import InvoiceDetail from '@/pages/invoice-detail';
+import Invoices from '@/pages/invoices';
+import RiskModels from '@/pages/risk-models';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -29,7 +31,9 @@ function Router() {
       <RoutedErrorBoundary>
         <Switch>
           <Route path="/" component={Dashboard} />
+          <Route path="/invoices" component={Invoices} />
           <Route path="/invoices/:id" component={InvoiceDetail} />
+          <Route path="/risk-models" component={RiskModels} />
           <Route component={NotFound} />
         </Switch>
       </RoutedErrorBoundary>
