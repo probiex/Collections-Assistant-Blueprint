@@ -15,13 +15,16 @@ import {
   Plug,
   Download,
   Settings,
-  ChevronDown,
   Zap,
   ServerOff,
+  HelpCircle,
 } from "lucide-react";
 import { Button } from "@workspace/ref-design/components/ui/button";
 import { useGetCollectionSettings, useGetCollectionsDashboard } from "@workspace/api-client-react";
 import { cn } from "@workspace/ref-design/lib/utils";
+import { useOnboardingContext } from "@/components/walkthrough/onboarding-context";
+import { WalkthroughModal } from "@/components/walkthrough/walkthrough-modal";
+import { WALKTHROUGH_STEPS } from "@/components/walkthrough/steps";
 
 interface NavItem {
   href: string;
@@ -203,6 +206,8 @@ function SidebarContent({ onLinkClick }: { onLinkClick?: () => void }) {
             </div>
           </div>
         )}
+        {/* Walkthrough trigger */}
+        <WalkthroughTrigger onLinkClick={onLinkClick} />
         <div className="flex items-center gap-3 px-3 py-2">
           <div className="w-8 h-8 rounded-full bg-sidebar-primary text-sidebar-primary-foreground flex items-center justify-center font-bold text-xs shrink-0">
             FT
@@ -214,6 +219,33 @@ function SidebarContent({ onLinkClick }: { onLinkClick?: () => void }) {
         </div>
       </div>
     </>
+  );
+}
+
+function WalkthroughTrigger({ onLinkClick }: { onLinkClick?: () => void }) {
+  const { open, restart, hasCompleted } = useOnboardingContext();
+  return (
+    <button
+      onClick={() => {
+        if (onLinkClick) onLinkClick();
+        if (hasCompleted) restart();
+        else open(0);
+      }}
+      aria-label="Open product walkthrough"
+      data-testid="btn-walkthrough-trigger"
+      className={cn(
+        "flex items-center gap-2.5 w-full px-3 py-2 mb-2 rounded-lg text-sm font-medium transition-all",
+        "text-sidebar-foreground/75 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+      )}
+    >
+      <HelpCircle className="w-4 h-4 shrink-0 text-muted-foreground" />
+      <span className="truncate">{hasCompleted ? "Restart tour" : "Product tour"}</span>
+      {!hasCompleted && (
+        <span className="ml-auto text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-primary/15 text-primary uppercase tracking-wider shrink-0">
+          New
+        </span>
+      )}
+    </button>
   );
 }
 
@@ -401,6 +433,26 @@ export function Layout({ children }: LayoutProps) {
           {children}
         </div>
       </main>
+
+      {/* Global walkthrough modal */}
+      <WalkthroughPortal />
     </div>
+  );
+}
+
+function WalkthroughPortal() {
+  const { walkthroughOpen, stepIndex, next, back, goTo, close, complete } =
+    useOnboardingContext();
+  return (
+    <WalkthroughModal
+      open={walkthroughOpen}
+      stepIndex={stepIndex}
+      onNext={() => next(WALKTHROUGH_STEPS.length)}
+      onBack={back}
+      onGoTo={goTo}
+      onClose={close}
+      onSkip={complete}
+      onComplete={complete}
+    />
   );
 }

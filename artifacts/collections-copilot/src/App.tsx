@@ -11,6 +11,7 @@ import {
   Router as WouterRouter,
 } from 'wouter';
 import { Layout } from '@/components/layout';
+import { OnboardingProvider } from '@/components/walkthrough/onboarding-context';
 import Dashboard from '@/pages/dashboard';
 import InvoiceDetail from '@/pages/invoice-detail';
 import Invoices from '@/pages/invoices';
@@ -65,7 +66,9 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, '')}>
-          <Router />
+          <OnboardingProvider>
+            <Router />
+          </OnboardingProvider>
         </WouterRouter>
         <Toaster />
       </TooltipProvider>

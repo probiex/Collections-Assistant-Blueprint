@@ -1,1 +1,2 @@
 - [Collections reporting safeguards](collections-reporting-safeguards.md) — keep reporting helpers single-source and validate live totals/export escaping when portfolio data changes.
+- [Versioned onboarding state](versioned-onboarding-state.md) — treat walkthrough copy or structure changes as a version decision so existing users are not surprised.
