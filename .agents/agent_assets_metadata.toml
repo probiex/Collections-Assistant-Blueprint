@@ -1,0 +1,16 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "xLW_22FgAuLcgGRYl0t2o"
+uri = "file://docs/collections-copilot-phased-plan.md"
+type = "text"
+title = "Collections Copilot — Phased Delivery Plan"
+description = "A seven-phase implementation roadmap with architecture, priorities, acceptance gates, buildathon timing, corrections to the source plan, and a post-MVP roadmap."
+logical_id = "e91d6727-c1c4-4ab0-aba8-f176f52a1966"
+content_hash = "sha256:017ac910429449107f0e18bf9f6d10d86fb3916ab8043e8613101e0e27b08f5e"
+size = 16192
+mtime_ms = 1789802632654
+storage_uri = "gcs://replit-rams-assets-sisko/rams/assets/repl:a2bd2407-1b2c-45c8-b031-849e3af0e244/e91d6727-c1c4-4ab0-aba8-f176f52a1966/26312263-9266-447c-b35c-0b46f8b8a7a2"
+storage_version_token = "1789802660486639"
+content_type = "text/markdown"
