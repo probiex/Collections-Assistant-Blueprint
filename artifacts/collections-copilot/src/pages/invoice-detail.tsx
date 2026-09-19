@@ -36,6 +36,7 @@ import {
   ServerOff,
   Info,
   Users,
+  Printer,
 } from "lucide-react";
 import { Skeleton } from "@workspace/ref-design/components/ui/skeleton";
 import { toast } from "@workspace/ref-design/hooks/use-toast";
@@ -151,9 +152,9 @@ export default function InvoiceDetail() {
   });
 
   return (
-    <div className="flex flex-col h-full bg-background relative">
+    <div className="invoice-detail-page flex flex-col h-full bg-background relative">
       {/* Header */}
-      <header className="h-16 px-6 border-b border-border flex items-center justify-between flex-shrink-0 bg-card z-10 sticky top-0">
+      <header className="h-16 px-6 border-b border-border flex items-center justify-between flex-shrink-0 bg-card z-10 sticky top-0 print-hide">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" onClick={handleBackNavigation} className="h-8 w-8 text-muted-foreground hover:text-foreground">
             <ArrowLeft className="h-4 w-4" />
@@ -176,12 +177,18 @@ export default function InvoiceDetail() {
           ) : null}
         </div>
         {invoice && (
-          <Link href={`/customers/${invoice.invoice_id}`}>
-            <Button variant="outline" size="sm" className="gap-1.5 hidden sm:inline-flex">
-              <Users className="w-3.5 h-3.5" />
-              Customer Profile
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" className="gap-1.5" onClick={() => window.print()}>
+              <Printer className="w-3.5 h-3.5" />
+              Print
             </Button>
-          </Link>
+            <Link href={`/customers/${invoice.invoice_id}`}>
+              <Button variant="outline" size="sm" className="gap-1.5 hidden sm:inline-flex">
+                <Users className="w-3.5 h-3.5" />
+                Customer Profile
+              </Button>
+            </Link>
+          </div>
         )}
       </header>
 

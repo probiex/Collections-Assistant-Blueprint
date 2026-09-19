@@ -28,6 +28,7 @@ import {
   RefreshCw,
   AlertTriangle,
   Filter,
+  Download,
 } from "lucide-react";
 import { Input } from "@workspace/ref-design/components/ui/input";
 import { Button } from "@workspace/ref-design/components/ui/button";
@@ -46,6 +47,7 @@ import {
 } from "@workspace/ref-design/components/ui/alert-dialog";
 import { RiskBadge, StatusBadge } from "@/components/status-badges";
 import { formatCurrency } from "@/lib/utils";
+import { downloadInvoicesCsv } from "@/lib/csv";
 import { toast } from "@workspace/ref-design/hooks/use-toast";
 
 type SortField = "customer_name" | "invoice_amount" | "days_overdue" | "risk_score" | "due_date";
@@ -262,8 +264,30 @@ export default function Invoices() {
             Detailed portfolio view and collections workflow.
           </p>
         </div>
-        <div className="text-sm text-muted-foreground font-medium bg-secondary/50 px-3 py-1.5 rounded-full border border-border">
-          <span className="text-foreground font-bold">{filteredInvoices.length}</span> results found
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="text-sm text-muted-foreground font-medium bg-secondary/50 px-3 py-1.5 rounded-full border border-border">
+            <span className="text-foreground font-bold">{filteredInvoices.length}</span> results found
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-1.5"
+            disabled={!dashboard?.invoices.length}
+            onClick={() => downloadInvoicesCsv(dashboard?.invoices ?? [], "all")}
+            data-testid="btn-export-all-csv"
+          >
+            <Download className="w-3.5 h-3.5" /> All CSV
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-1.5"
+            disabled={!filteredInvoices.length}
+            onClick={() => downloadInvoicesCsv(filteredInvoices, "filtered")}
+            data-testid="btn-export-filtered-csv"
+          >
+            <Download className="w-3.5 h-3.5" /> Filtered CSV
+          </Button>
         </div>
       </div>
 

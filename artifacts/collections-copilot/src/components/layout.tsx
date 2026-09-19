@@ -191,7 +191,7 @@ export function Layout({ children }: LayoutProps) {
   });
 
   return (
-    <div className="flex h-[100dvh] w-full bg-background overflow-hidden text-foreground relative">
+    <div className="app-shell flex h-[100dvh] w-full bg-background overflow-hidden text-foreground relative">
       {/* Mobile Nav Overlay */}
       {mobileMenuOpen && (
         <div className="fixed inset-0 z-50 flex md:hidden">
@@ -216,13 +216,13 @@ export function Layout({ children }: LayoutProps) {
       )}
 
       {/* Sidebar (Desktop) */}
-      <aside className="w-64 border-r border-sidebar-border bg-sidebar text-sidebar-foreground flex-shrink-0 flex-col hidden md:flex">
+      <aside className="app-sidebar w-64 border-r border-sidebar-border bg-sidebar text-sidebar-foreground flex-shrink-0 flex-col hidden md:flex">
         <SidebarContent />
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col min-w-0 bg-background overflow-hidden relative">
-        <header className="h-16 border-b border-border bg-background/90 backdrop-blur flex items-center justify-between px-6 flex-shrink-0 z-10 relative">
+      <main className="app-main flex-1 flex flex-col min-w-0 bg-background overflow-hidden relative">
+        <header className="app-header h-16 border-b border-border bg-background/90 backdrop-blur flex items-center justify-between px-6 flex-shrink-0 z-10 relative">
           <div className="flex items-center flex-1">
             {/* Mobile: hamburger + page name */}
             <div className="md:hidden flex items-center gap-3">

@@ -1,0 +1,1 @@
+- [Collections reporting safeguards](collections-reporting-safeguards.md) — keep reporting helpers single-source and validate live totals/export escaping when portfolio data changes.
